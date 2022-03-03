@@ -1,11 +1,9 @@
-
 import sys
 import numpy as np
-
 import os
 sys.path.append("./pb")
-
 from pb.localization_pb2 import Pose
+
 
 # 文件取出的顺序变
 def getpath(): 
@@ -33,13 +31,13 @@ def getpath2():
         filepath = filepath + "/localization_output/localization_output"
         path_this.append(filepath)
         # print(filepath)
-        with open("path.txt","a" ) as f:
-                f.write(filepath+"\n")
-        f.close()
+        # with open("path.txt","a" ) as f:
+        #         f.write(filepath+"\n")
+        # f.close()
         
 
 # 获取位置点坐标
-def getstate():
+def get_pos():
     x = []
     y = []
     for ppath in path_this:
@@ -48,37 +46,51 @@ def getstate():
        
         x.append(state.position.x) 
         y.append(state.position.y)    
-        with open("data_pos.txt","a")as f:
-            f.write(str(state.position))
-        f.close()
+        # with open("data_pos.txt","a")as f:
+        #     f.write(str(state.position))
+        # f.close()
 
-        with open("data_vel.txt","a" ) as f:
-             f.write(str(state.velocity))
-        f.close()
+        
        
         print(state.position)
     return x,y
+
+# 获取位置点速度
+def get_vel():
+    x = []
+    y = []
+    for ppath in path_this:
+        pre_str = open(ppath,'rb').read()
+        state.ParseFromString(pre_str)
+       
+        x.append(state.velocity.x) 
+        y.append(state.velocity.y)    
+        # with open("data_vel.txt","a" ) as f:
+        #      f.write(str(state.velocity))
+        # f.close()
+       
+        print(state.velocity)
+    return x,y
+
 
 if __name__ == '__main__':
     path_this=[]
     
     getpath2()
     state = Pose()
-    x ,y = getstate()
+
+    x ,y = get_pos()
     x = np.array(x)
     y = np.array(y)
     point = np.vstack([x,y])
-    print(point[0, :])
-    np.save('./point.npz',point)
-    # print(x)
-    
+    # print(point[0, :])
+    np.save('./position',point)
+ 
 
-    
-
-  
-
-
-
-
+    x,y = get_vel()
+    x = np.array(x)
+    y = np.array(y)
+    vel = np.vstack([x,y])
+    np.save('./velocity',vel)
 
 
