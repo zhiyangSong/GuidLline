@@ -61,7 +61,7 @@ def knot_vector(param, k, N):
     m = N + k
   
     knot = np.zeros((1, m+1))
-    print(knot.size)
+    # print(knot.size)
     for i in range(k + 1):
         knot[0][i] = 0
     for i in range(m - k, m + 1):

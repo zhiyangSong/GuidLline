@@ -15,7 +15,9 @@ def curve_inter_figure():
     Input: Data points
     '''
     D_X = [1, 1, 0, -0.5, 1, 3, 4, 4.2, 4]
+    
     D_Y = [0, 1, 2,    3, 1, 1, 3, 2.5, 2]
+    
     D = [D_X, D_Y]
     D_N = len(D_X)
     k = 2               # degree
@@ -67,9 +69,14 @@ def curve_inter_figure():
         plt.plot(tmp_x, tmp_y, color='g')
     plt.show()
 
-def curve_approx_figure():
-    D_X = [1, 1, 0, -0.5, 1.5, 3, 4, 4.2, 4]
-    D_Y = [0, 1, 2, 3, 4, 3.5, 3, 2.5, 2]
+def curve_approx_figure(D_X , D_Y):
+    # D_X = [1, 1, 0, -0.5, 1.5, 3, 4, 4.2, 4]
+    # D_Y = [0, 1, 2, 3, 4, 3.5, 3, 2.5, 2]
+    
+
+    
+
+    
     D = [D_X, D_Y]
 
     D_N = len(D_X)
@@ -99,10 +106,10 @@ def curve_approx_figure():
     for i in range(D_N):
         plt.scatter(D[0][i], D[1][i], color='r')
 
-    for i in range(H - 1):
-        tmp_x = [P_control[0][i], P_control[0][i+1]]
-        tmp_y = [P_control[1][i], P_control[1][i+1]]
-        plt.plot(tmp_x, tmp_y, color='b')
+    # for i in range(H - 1):
+    #     tmp_x = [P_control[0][i], P_control[0][i+1]]
+    #     tmp_y = [P_control[1][i], P_control[1][i+1]]
+    #     plt.plot(tmp_x, tmp_y, color='b')
 
     '''
     Step 4. Calculate the points on the b-spline curve
@@ -119,6 +126,10 @@ def curve_approx_figure():
         tmp_y = [P_piece[1][i], P_piece[1][i+1]]
         plt.plot(tmp_x, tmp_y, color='g')
     plt.show()
+    
+
+
+    
 
     # plt.savefig("./test.png")
 
@@ -285,9 +296,68 @@ def surface_approx_figure():
     plt.show()
 
 
+def get_control_point(D_X , D_Y):
+    # D_X = [1, 1, 0, -0.5, 1.5, 3, 4, 4.2, 4]
+    # D_Y = [0, 1, 2, 3, 4, 3.5, 3, 2.5, 2]
+
+    D = [D_X, D_Y]
+
+    D_N = len(D_X)
+    k = 4           # degree
+    H = 8           # the number of control points
+
+    '''
+    Step 1. Calculate the parameters
+    '''
+    p_centripetal = ps.centripetal(D_N, D)
+
+    '''
+    Step 2. Calculate the knot vector
+    '''
+    knot = ps.knot_vector(p_centripetal, k, D_N)
+
+    '''
+    Step 3. Calculate the control points
+    '''
+    P_control = bc.curve_approximation(D, D_N, H, k, p_centripetal, knot)
+    print(P_control)
+
+    fig = plt.figure()
+    for i in range(H):
+        plt.scatter(P_control[0][i], P_control[1][i], color='b')
+
+    # for i in range(D_N):
+    #     plt.scatter(D[0][i], D[1][i], color='r')
+
+    # for i in range(H - 1):
+    #     tmp_x = [P_control[0][i], P_control[0][i+1]]
+    #     tmp_y = [P_control[1][i], P_control[1][i+1]]
+    #     plt.plot(tmp_x, tmp_y, color='b')
+
+    '''
+    Step 4. Calculate the points on the b-spline curve
+    '''
+    # piece_num = 80
+    # p_piece = np.linspace(0, 1, piece_num)
+    # p_centripetal_new = ps.centripetal(H, P_control)
+    # knot_new = ps.knot_vector(p_centripetal_new, k, H)
+    # P_piece = bc.curve(P_control, H, k, p_piece, knot_new)
+
+    # # print(P_piece)
+    # for i in range(piece_num - 1):
+    #     tmp_x = [P_piece[0][i], P_piece[0][i+1]]
+    #     tmp_y = [P_piece[1][i], P_piece[1][i+1]]
+    #     plt.plot(tmp_x, tmp_y, color='g')
+    plt.show()
+    return P_control
+
+
+
+
+
 # curve_inter_figure()
-#
-curve_approx_figure()
+# #
+# curve_approx_figure()
 #
 # surface_inter_figure()
 #
