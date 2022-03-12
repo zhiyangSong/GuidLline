@@ -1,33 +1,33 @@
-import BaseFunction as bf
+import BSpline.BaseFunction as bf
 import numpy as np
 
 # 曲线插值
-# def curve_interpolation(D, N, k, param, knot):
-#     '''
-#     Given a set of N data points, D0, D1, ..., Dn and a degree k,
-#     find a B-spline curve of degree k defined by N control points
-#     that passes all data points in the given order.
-#     :param D: data points (N x 2)
-#     :param N: the number of data points
-#     :param k: degree
-#     :param param: parameters
-#     :param knot: knot vector
-#     :return: control points (N x 2)
-#     '''
-#     Nik = np.zeros((N, N))
+def curve_interpolation(D, N, k, param, knot):
+    '''
+    Given a set of N data points, D0, D1, ..., Dn and a degree k,
+    find a B-spline curve of degree k defined by N control points
+    that passes all data points in the given order.
+    :param D: data points (N x 2)
+    :param N: the number of data points
+    :param k: degree
+    :param param: parameters
+    :param knot: knot vector
+    :return: control points (N x 2)
+    '''
+    Nik = np.zeros((N, N))
 
-#     for i in range(N):
-#         for j in range(N):
-#             Nik[i][j] = bf.BaseFunction(j, k+1, param[i], knot)
-#     Nik[N-1][N-1] = 1
-#     print(Nik)
-#     Nik_inv = np.linalg.inv(Nik)
-#     print(Nik_inv)
-#     P = []
-#     for i in range(len(D)):
-#         P.append(np.dot(Nik_inv, D[i]).tolist())
-#     print(P)
-#     return P
+    for i in range(N):
+        for j in range(N):
+            Nik[i][j] = bf.BaseFunction(j, k+1, param[i], knot)
+    Nik[N-1][N-1] = 1
+    print(Nik)
+    Nik_inv = np.linalg.inv(Nik)
+    print(Nik_inv)
+    P = []
+    for i in range(len(D)):
+        P.append(np.dot(Nik_inv, D[i]).tolist())
+    print(P)
+    return P
 
 #曲线拟合
 def curve_approximation(D, N, H, k, param, knot):
