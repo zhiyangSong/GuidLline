@@ -49,9 +49,28 @@ def plotMap(dataDir, segBegin=0, segEnd=0, tra_begin=0, tra_length=0):
 # plotMap(dataDir=dataDir, segBegin=7, segEnd=12, tra_begin=2200, tra_length=500)
 
 
+def reducePoint(tra, step):
+    """
+    对轨迹点精简处理
+    tra: 轨迹点 numpy (Num, 2)
+    step: 缩小倍数
+    """
+    length = tra.shape[0]
+    res = []
+    for i in range(0, length, step):
+        res.append(tra[i, :])
+    return np.array(res)
+
+
 def showTra(dataDir):
     tra = np.loadtxt("{}tra.csv".format(dataDir), delimiter=",", dtype="double")
-    plt.plot(tra[:, 0], tra[:, 1], color='r')
+    point = tra[:, :2]
+  
+    point = reducePoint(point, step=50)
+    point = point.T
+    point[0, :] = point[0, :] - np.average(point[0, :])
+    point[1, :] = point[1, :] - np.average(point[1, :])
+    plt.plot(point[0,:],point[1, :], color='r')
     plt.show()
 
 showTra("./data/bag_2/")

@@ -3,7 +3,7 @@ import numpy as np
 import bspline_curve as bc
 import bspline_surface as bs
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+
 
 
 
@@ -14,13 +14,11 @@ def curve_inter_figure():
     '''
     Input: Data points
     '''
-    D_X = [1, 1, 0, -0.5, 1, 3, 4, 4.2, 4]
-    
-    D_Y = [0, 1, 2,    3, 1, 1, 3, 2.5, 2]
-    
+    D_X = [1, 1, 0, -0.5, 1.5,   3, 4, 4.2, 4]
+    D_Y = [0, 1, 2,    3,   4, 3.5, 3, 2.5, 2]
     D = [D_X, D_Y]
     D_N = len(D_X)
-    k = 2               # degree
+    k = 3              # degree
 
     '''
     Step 1. Calculate parameters
@@ -38,7 +36,7 @@ def curve_inter_figure():
     Step 2. Calculate knot vector
     '''
     knot = ps.knot_vector(p_centripetal, k, D_N)
-    # print(knot)
+    print(knot)
 
     '''
     Step 3. Calculate control points
@@ -50,7 +48,6 @@ def curve_inter_figure():
     for i in range(D_N):
         plt.scatter(D[0][i], D[1][i], color='r')
         plt.scatter(P_inter[0][i], P_inter[1][i], color='b')
-       
     for i in range(D_N - 1):
         tmp_x = [P_inter[0][i], P_inter[0][i+1]]
         tmp_y = [P_inter[1][i], P_inter[1][i+1]]
@@ -68,6 +65,7 @@ def curve_inter_figure():
         tmp_y = [P_piece[1][i], P_piece[1][i+1]]
         plt.plot(tmp_x, tmp_y, color='g')
     plt.show()
+
 
 def curve_approx_figure(D_X , D_Y):
     # D_X = [1, 1, 0, -0.5, 1.5, 3, 4, 4.2, 4]
@@ -355,7 +353,7 @@ def get_control_point(D_X , D_Y):
 
 
 
-# curve_inter_figure()
+curve_inter_figure()
 # #
 # curve_approx_figure()
 #

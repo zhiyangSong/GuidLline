@@ -1,4 +1,4 @@
-import BSpline.BaseFunction as bf
+import BaseFunction as bf
 import numpy as np
 
 # 曲线插值

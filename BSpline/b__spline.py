@@ -1,22 +1,26 @@
-import BSpline.parameter_selection as ps
+'''
+弃用
+'''
+import parameter_selection as ps
 import numpy as np
-import BSpline.bspline_curve as bc
+import bspline_curve as bc
 import matplotlib.pyplot as plt
+import sys
+sys.path.append("..")
+from porcess_data.dp import DouglasPeuker
 
 
+import math
 
 '''
 通过给出的一些轨迹点，反求控制点，画出B样条曲线
 '''
-def curve_inter_figure():
+# 曲线插值法
+def curve_inter_figure(D, D_N, k):
     '''
     Input: Data points
     '''
-    D_X = [1, 1, 0, -0.5, 1, 3, 4, 4.2, 4]
-    D_Y = [0, 1, 2,    3, 1, 1, 3, 2.5, 2]
-    D = [D_X, D_Y]
-    D_N = len(D_X)
-    k = 2               # degree
+            
 
     '''
     Step 1. Calculate parameters
@@ -40,7 +44,7 @@ def curve_inter_figure():
     Step 3. Calculate control points
     '''
     P_inter = bc.curve_interpolation(D, D_N, k, p_centripetal, knot)
-    # print(P_inter)
+    print(P_inter)
 
     fig = plt.figure()
     for i in range(D_N):
@@ -65,7 +69,7 @@ def curve_inter_figure():
         plt.plot(tmp_x, tmp_y, color='g')
     plt.show()
 
-
+# 曲线拟合法
 def curve_approx_figure(D, D_N, k, H):
     '''
     D: trajetory point
@@ -77,8 +81,8 @@ def curve_approx_figure(D, D_N, k, H):
     '''
     Step 1. Calculate the parameters
     '''
-    p_centripetal = ps.centripetal(D_N, D)
-    # p_centripetal = ps.uniform_spaced(D_N)
+    # p_centripetal = ps.centripetal(D_N, D)
+    p_centripetal = ps.uniform_spaced(D_N)
     # print("p_centripetal: ", p_centripetal)
 
     '''
@@ -91,7 +95,7 @@ def curve_approx_figure(D, D_N, k, H):
     Step 3. Calculate the control points
     '''
     P_control = bc.curve_approximation(D, D_N, H, k, p_centripetal, knot)
-    # print("P_control", P_control)
+    print(P_control)
 
     fig = plt.figure()
     for i in range(H):
@@ -123,6 +127,33 @@ def curve_approx_figure(D, D_N, k, H):
 
     # plt.savefig("./test.png")
 
+
+def uniformization(tra, len):
+    """
+    把密度不均匀的轨迹点均匀化（两点之间距离相近）
+    len: 相两点之间的距离
+    """
+    # tra = np.loadtxt("{}tra.csv".format(traDir), delimiter=",", dtype="double")
+    n = tra.shape[0]
+    i = 0
+    saveList = []
+    saveList.append(tra[i, :])  # 添加第一个点
+    for j in range(1, n):
+        # (x1-x2)**2 + (y1-y2)**2
+        dis = math.sqrt((tra[i, 0]-tra[j, 0])**2 + (tra[i, 1]-tra[j, 1])**2)
+    
+        # 如果 i 和 i+1 点的距离小于len，则删除 i+1 点
+        if dis > len:
+            saveList.append(tra[j, :])
+            print("dis = {}".format(dis))
+            i = j
+    saveList = np.array(saveList)
+    print("saveList len: ", saveList.shape)
+    # plt.scatter(saveList[:, 0], saveList[:, 1])
+    # plt.show()
+    return saveList
+
+# 轨迹点抽稀的方法，弃用
 def reducePoint(tra, step):
     """
     对轨迹点精简处理
@@ -135,22 +166,86 @@ def reducePoint(tra, step):
         res.append(tra[i, :])
     return np.array(res)
 
+# 曲线拟合
 def showTra():
-    dataDir = './data/bag_2/'
+    
+    dataDir = '../data/bag_2/'
     tra = np.loadtxt("{}tra.csv".format(dataDir), delimiter=",", dtype="double")
     point = tra[:, :2]
-    point = reducePoint(point, step=7)
-    point = point.T
+    
+    # d = DouglasPeuker()
+    # point = d.main(point)
+    # point = np.array(point)
+    # print(point.shape)
+    # plt.scatter(point[:,0],point[:, 1], color='r')
+    # plt.plot(point[:,0],point[:, 1], color='r')
+    # point = point.T
+    # point[0, :] = point[0, :] - np.average(point[0, :])
+    # point[1, :] = 100*(point[1, :] - np.average(point[1, :]))
 
+    point = uniformization(tra , 5)
+    # point = reducePoint(point, step=20)
+
+    # d = DouglasPeuker()
+    # point = d.main(point)
+    # point = np.array(point)
+
+    # d =  LimitVerticalDistance()
+    # ddd = d.diluting(point)
+    # ddd = np.array(ddd)
+
+    point = point.T
     point[0, :] = point[0, :] - np.average(point[0, :])
     point[1, :] = point[1, :] - np.average(point[1, :])
 
-    k = 5
-    H = 8
+    # plt.plot(point[0,:],point[1, :], color='r')
+    plt.scatter(point[0,:],point[1, :], color='r')
+    plt.show()
+
+
+
+
+
+    k = 3
+    H = 15
     D_N = point.shape[1]
 
-    curve_approx_figure(D=point, D_N=D_N, k=k, H=H)
+    # curve_approx_figure(D=point, D_N=D_N, k=k, H=H)
 
+# 曲线插值
+def showTra2():
+    dataDir = './data/bag_2/'
+    tra = np.loadtxt("{}tra.csv".format(dataDir), delimiter=",", dtype="double")
+    point = tra[:, :2]
+    
+    # d = DouglasPeuker()
+    # point = d.main(point)
+    # point = np.array(point)
+    # print(point.shape)
+    # plt.scatter(point[:,0],point[:, 1], color='r')
+    # plt.plot(point[:,0],point[:, 1], color='r')
+    # point = point.T
+    # point[0, :] = point[0, :] - np.average(point[0, :])
+    # point[1, :] = point[1, :] - np.average(point[1, :])
+
+    
+    point = reducePoint(point, step=20)
+    point = point.T
+    point[0, :] = point[0, :] - np.average(point[0, :])
+    point[1, :] = point[1, :] - np.average(point[1, :])
+    plt.plot(point[0,:],point[1, :], color='r')
+    plt.show()
+
+   
+
+
+    k = 3
+    H = 12
+    D_N = point.shape[1]
+    curve_inter_figure(D=point, D_N=D_N, k=k)
+    
+
+# 曲线拟合测试
 def showTest():
     D_X = [1, 1, 0, -0.5, 1.5, 3, 4, 4.2, 4]
     D_Y = [0, 1, 2, 3, 4, 3.5, 3, 2.5, 2]
@@ -160,9 +255,19 @@ def showTest():
     D_N = len(D_X)
     curve_approx_figure(D=D, D_N=D_N, k=k, H=H)
 
+# 曲线插值测试
+def showTest2():
+    D_X = [1, 1, 0, -0.5, 1.5,   3, 4, 4.2, 4]
+    D_Y = [0, 1, 2,    3,   4, 3.5, 3, 2.5, 2]
+    D = [D_X, D_Y]
+    D_N = len(D_X)
+    k = 3 
+    curve_inter_figure(D,D_N , k)
+
+
 if __name__ == '__main__':
-    
-    curve_inter_figure()
+    showTra()
+    # showTest()
+    # showTest2()
 
 
-    

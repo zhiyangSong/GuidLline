@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def plotMap(dataDir, segmentNum, tra_length):
-    tra = np.loadtxt("./data/bag_play/tra.csv", delimiter=",", dtype="double")
+    tra = np.loadtxt("./data/bag_2/tra.csv", delimiter=",", dtype="double")
     for index in range(segmentNum):
         filename = '{}segment_{}.csv'.format(dataDir, index)
         data = np.loadtxt(filename, delimiter=",", dtype="double")
@@ -28,6 +28,6 @@ def plotMap(dataDir, segmentNum, tra_length):
     plt.show()
 
 
-dataDir = "./data/bag_play/"
+dataDir = "./data/bag_2/"
 segmentNum = 3
 plotMap(dataDir, segmentNum, 999)

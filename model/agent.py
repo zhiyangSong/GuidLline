@@ -45,9 +45,9 @@ class BCAgent():
                 pred = self.net(X)
                 loss = self.loss_function(pred, y)
 
-                self.optimizer.zero_grad();
-                loss.backward();
-                self.optimizer.step();
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
             
             if epoch%self.args.save_interval == 0:
                 self.save(epoch)
@@ -58,7 +58,7 @@ class BCAgent():
         if not os.path.exists(dir):
             print("dont have this dir")
             os.mkdir(dir)
-        dir = 'model/{}_{}episodes.pth'.format(time_now,episodes)
+        dir = '/home/song/haomo/GuideLine/model/{}_{}episodes.pth'.format(time_now,episodes)
         torch.save(self.net.state_dict(), dir)
         
     def load(self, path):
