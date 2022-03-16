@@ -3,9 +3,10 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
-def uniformization(tra, len):
+def uniformization(tra, len, show=False):
     """
     把密度不均匀的轨迹点均匀化（两点之间距离相近）
+    tra: 轨迹点. shape: (N, 2|4)
     len: 相两点之间的距离
     """
     # tra = np.loadtxt("{}tra.csv".format(traDir), delimiter=",", dtype="double")
@@ -17,15 +18,15 @@ def uniformization(tra, len):
         # (x1-x2)**2 + (y1-y2)**2
         dis = math.sqrt((tra[i, 0]-tra[j, 0])**2 + (tra[i, 1]-tra[j, 1])**2)
     
-        # 如果 i 和 i+1 点的距离小于len，则删除 i+1 点
         if dis > len:
             saveList.append(tra[j, :])
             # print("dis = {}".format(dis))
             i = j
     saveList = np.array(saveList)
     print("saveList len: ", saveList.shape)
-    # plt.scatter(saveList[:, 0], saveList[:, 1])
-    # plt.show()
+    if show:
+        plt.scatter(saveList[:, 0], saveList[:, 1])
+        plt.show()
     return saveList
 
 
