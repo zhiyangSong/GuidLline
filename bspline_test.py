@@ -7,10 +7,14 @@ from process_data.B_Spline_Approximation import BS_curve
 from process_data.uniformization import uniformization
     
     
+"""
+test for bspline
+"""
+
 
 bs = BS_curve(8,3)
 
-dataDir = './data/bag_2/'
+dataDir = './data/bag_20220211_1/'
 tra = np.loadtxt("{}tra.csv".format(dataDir), delimiter=",", dtype="double")
 point = tra[:, :2]
 point = uniformization(tra , 5)
