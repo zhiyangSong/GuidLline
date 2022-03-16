@@ -1,4 +1,4 @@
-from os import path
+import os 
 from process import plotMap, plotLane, getTrainData
 import numpy as np
 import glob
@@ -15,6 +15,8 @@ import glob
 
 '''
 批量处理数据，'''
+if not os.path.exists("./data_input"):
+    os.makedirs("./data_input")
 fec = []
 lab = []
 datadir  = "./data/"
@@ -25,8 +27,9 @@ for i in path_data_number:
     fec.append(fectures)
     lab.append(labels)
 
-fec = np.array(fec)
-lab = np.array(lab)
+fec = np.array(fec).flatten().reshape(len(path_data_number) , -1)
+lab = np.array(lab).flatten().reshape(len(path_data_number) , -1)
+
 np.save("{}features".format("./data_input/"), fec)
 np.save("{}labels".format("./data_input/"), lab)
 
