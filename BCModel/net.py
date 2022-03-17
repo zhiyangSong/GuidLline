@@ -13,9 +13,8 @@ class BCNet(nn.Module):
         self.layer_out = nn.Linear(args.num_units_2, output_size)
         self.layer_out.weight.data.normal_(0, 1)
 
-    def forward(self, state_input, action_input):
-        x = torch.cat([state_input, action_input], 1)
-        x = F.relu(self.layer1(x))
+    def forward(self, input):
+        x = F.relu(self.layer1(input))
         x = F.relu(self.layer2(x))
         x = self.layer_out(x)
         return x

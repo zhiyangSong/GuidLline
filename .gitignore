@@ -108,3 +108,5 @@ venv.bak/
 /test
 /data_input
 
+/model
+/log

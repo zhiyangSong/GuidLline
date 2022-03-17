@@ -99,14 +99,17 @@ def calcuBoundary(laneDir):
     return laneInfo
 
 
-def bsplineFitting(laneInfo, cpNum, degree, show=False):
+def bsplineFitting(laneInfo, cpNum, degree, distance, show=False):
     """
     使用B样条拟合轨迹点
+    cpNum: 控制点个数
+    degree: 阶数
+    distance: 轨迹点抽取距离
     """
     tra = laneInfo
     bs = BS_curve(cpNum, degree)
     # 获取左边界线拟合参数并简化轨迹点
-    boundary = uniformization(tra, 7)
+    boundary = uniformization(tra, distance)
     # 打印边界点
     xx = boundary[: , 0]
     yy = boundary[: , 1]
@@ -174,7 +177,7 @@ def getTrainData(laneDir, limit_1, limit_2):
     end_y = tra[-1, 1]
     start_speed = math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
     np.save("{}tra".format(laneDir), tra)
-    traCP = bsplineFitting(tra[:, 0:2], cpNum=8, degree=3, show=False)
+    traCP = bsplineFitting(tra[:, 0:2], cpNum=8, degree=3, distance=5, show=True)
     print("轨迹拟合控制点： ", traCP)
 
     # 拼接第一段和第三段数据
@@ -189,7 +192,7 @@ def getTrainData(laneDir, limit_1, limit_2):
     # 根据中心线与左右边界距离计算道路左右边界点
     laneInfo = calcuBoundary(laneDir)
     # 拟合道路左边界
-    boundaryCP = bsplineFitting(laneInfo[:, 2:4], cpNum=8, degree=3, show=False)
+    boundaryCP = bsplineFitting(laneInfo[:, 2:4], cpNum=8, degree=3, distance=5, show=True)
     print("左边界拟合控制点", boundaryCP)
     boundaryCP = np.array(boundaryCP).reshape(1, -1)
 

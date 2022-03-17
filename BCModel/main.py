@@ -6,7 +6,7 @@ def main():
     args = get_common_args()
 
     agent = BCAgent(args.input_size, args.output_size, args)
-    agent.learn()
+    agent.train()
 
 
 if __name__ == '__main__':
