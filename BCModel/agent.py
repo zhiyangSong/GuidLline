@@ -5,6 +5,7 @@ import torch
 import time
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.tensorboard import SummaryWriter
 from net import BCNet
 
 
@@ -22,10 +23,14 @@ class BCAgent():
         self.optimizer = torch.optim.Adam(self.net.parameters(), lr=self.learning_rate)
         self.loss_function = nn.MSELoss()
 
+        
         time_now = time.strftime('%y%m_%d%H%M')
         self.save_dir = "{}/{}".format(args.save_dir, time_now)
         if not os.path.exists(self.save_dir):
             os.mkdir(self.save_dir)
+        self.log_dir = "./{}/{}".format(args.log_dir,time_now)
+        if not os.path.exists(self.log_dir):
+            os.mkdir(self.log_dir)
 
 
     
@@ -44,6 +49,7 @@ class BCAgent():
             yield  features.index_select(0, j), labels.index_select(0, j)
 
     def train(self):
+        writer = SummaryWriter(self.log_dir)
         # https://pytorch.org/tutorials/beginner/basics/quickstart_tutorial.html
         for epoch in range(self.args.episodes_num):
             # for X, y in self.data_iter(self.batch_size, self.features, self.labels): 
@@ -52,6 +58,7 @@ class BCAgent():
                 y = torch.FloatTensor(y).view(1, -1)
                 pred = self.net(X)
                 loss = self.loss_function(pred, y)
+                writer.add_scalar("loss:", loss, epoch)
 
                 self.optimizer.zero_grad()
                 loss.backward()
