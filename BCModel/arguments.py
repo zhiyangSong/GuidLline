@@ -7,7 +7,7 @@ def get_common_args():
     parser.add_argument('--seed', type=int, default=123, help='random seed')
     parser.add_argument('--batch_size', type=int, default=64, help='the size of batch')
     parser.add_argument("--lr", type=float, default=5e-2, help="learning rate for adam optimizer")
-    parser.add_argument('--episodes_num', type=int, default=100, help='the number of episodes')
+    parser.add_argument('--episodes_num', type=int, default=500, help='the number of episodes')
     parser.add_argument('--save_interval', type=int, default=100, help='the number of steps to save the model')
     parser.add_argument('--save_dir', type=str, default="./model")
     parser.add_argument('--log_dir', type=str, default="./log")

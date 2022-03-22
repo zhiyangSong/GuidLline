@@ -23,7 +23,6 @@ class BCAgent():
         self.optimizer = torch.optim.Adam(self.net.parameters(), lr=self.learning_rate)
         self.loss_function = nn.MSELoss()
 
-        
         time_now = time.strftime('%y%m_%d%H%M')
         self.save_dir = "{}/{}".format(args.save_dir, time_now)
         if not os.path.exists(self.save_dir):
@@ -35,8 +34,8 @@ class BCAgent():
 
     
     def getData(self):
-        features = np.load("./data/fectures.npy")
-        labels = np.load("./data/labels.npy")
+        features = np.load("./data_input/features.npy")
+        labels = np.load("./data_input/labels.npy")
         return features, labels
 
 
@@ -64,9 +63,10 @@ class BCAgent():
                 loss.backward()
                 self.optimizer.step()
             
-            if epoch%self.args.save_interval == 0:
-                self.save(epoch)
+            # if epoch%self.args.save_interval == 0:
+            #     self.save(epoch)
             print(f"epoch: {epoch:<4} loss: {loss:>7f}")
+        self.save(epoch)
 
 
     def save(self, episodes):

@@ -5,7 +5,7 @@ from process_data.uniformization import uniformization, reducePoint
 from process_data.B_Spline_Approximation import BS_curve
 import math
 
-def plotMap(dataDir, segBegin=0, segEnd=0, tra_begin=0, tra_length=0):
+def plotMap(dataDir, segBegin=0, segEnd=0, tra_begin=0, tra_length=0, showTra=True):
     """
     tra_begin: 需要的打印轨迹的起始点
     tra_length: 需要打印的轨迹长度。0表示到结束
@@ -30,15 +30,16 @@ def plotMap(dataDir, segBegin=0, segEnd=0, tra_begin=0, tra_length=0):
         # right boundary
         r_b_x = xpoint + rLength*sin
         r_b_y = ypoint - rLength*cos
-        if tra_length == 0:
-            plt.plot(tra[tra_begin:, 0], tra[tra_begin:, 1], color='r')   # 轨迹
-        else:
-            tra_end = tra_begin + tra_length
-            plt.plot(tra[tra_begin:tra_end, 0], tra[tra_begin:tra_end, 1], color='r')
+        if showTra:
+            if tra_length == 0:
+                plt.plot(tra[tra_begin:, 0], tra[tra_begin:, 1], color='r')   # 轨迹
+            else:
+                tra_end = tra_begin + tra_length
+                plt.plot(tra[tra_begin:tra_end, 0], tra[tra_begin:tra_end, 1], color='r')
 
         plt.plot(xpoint, ypoint, color='g', linestyle='--')   # 中心线
-        plt.plot(l_b_x, l_b_y, color='b')
-        plt.plot(r_b_x, r_b_y, color='b')
+        plt.plot(l_b_x, l_b_y, color='y')
+        plt.plot(r_b_x, r_b_y, color='y')
 
     plt.show()
     plt.clf()
@@ -73,12 +74,12 @@ def plotLane(dataDir):
     plt.clf()
 
 
-def calcuBoundary(laneDir):
+def calcuBoundary(laneInfo):
     """
     输入一路段信息，计算边界轨迹。
-    保存并返回(中心线、左边界，右边界)数据 shape:(N, 6)
+    返回(中心线、左边界，右边界)数据 shape:(N, 6)
     """
-    laneInfo = np.load("{}laneInfo.npy".format(laneDir))
+    # laneInfo = np.loadtxt(laneDir, delimiter=",", dtype="double")
     # 计算边界线
     xpoint = laneInfo[:,0]
     ypoint = laneInfo[:,1]
@@ -94,8 +95,8 @@ def calcuBoundary(laneDir):
     r_b_y = ypoint - rLength*cos
     # laneInfo shape: (dataLength, 6) (中心线、左边界，右边界)
     laneInfo = np.vstack([xpoint, ypoint, l_b_x, l_b_y, r_b_x, r_b_y]).T
-    np.save("{}laneInfo".format(laneDir), laneInfo)
-    print(laneInfo.shape)
+    # np.save("{}laneInfo".format(laneDir), laneInfo)
+    # print(laneInfo.shape)
     return laneInfo
 
 
@@ -178,7 +179,7 @@ def getTrainData(laneDir, limit_1, limit_2):
     start_speed = math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
     np.save("{}tra".format(laneDir), tra)
     traCP = bsplineFitting(tra[:, 0:2], cpNum=8, degree=3, distance=5, show=True)
-    print("轨迹拟合控制点： ", traCP)
+    # print("轨迹拟合控制点： ", traCP)
 
     # 拼接第一段和第三段数据
     seg_1 = np.loadtxt("{}segment_0.csv".format(laneDir), delimiter=",", dtype="double")
@@ -190,10 +191,9 @@ def getTrainData(laneDir, limit_1, limit_2):
     laneInfo[:, 1] -= temp_y
     np.save("{}laneInfo".format(laneDir), laneInfo)
     # 根据中心线与左右边界距离计算道路左右边界点
-    laneInfo = calcuBoundary(laneDir)
+    laneInfo = calcuBoundary(laneInfo)
     # 拟合道路左边界
     boundaryCP = bsplineFitting(laneInfo[:, 2:4], cpNum=8, degree=3, distance=5, show=True)
-    print("左边界拟合控制点", boundaryCP)
     boundaryCP = np.array(boundaryCP).reshape(1, -1)
 
     fectures = np.array([0, 0, start_speed, end_x, end_y]).reshape(1, -1)
