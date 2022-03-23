@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 sys.path.append("..")
-from process_data.B_Spline_Approximation import BS_curve ,BS_curve2 
+from process_data.B_Spline_Approximation import BS_curve  
 from process_data.uniformization import uniformization
     
     
@@ -44,9 +44,12 @@ test for bspline
 
 """
 通过控制点和节点出拟合曲线
-"""
 
+
+
+"""
 bs = BS_curve(8,3)
+knots = bs.get_knots()
 controlPoints = np.array([ 
                 [ 0.00000000e+00 , 0.00000000e+00 ], [-1.73422712e+01 , 2.15658488e-01],
                 [-2.35382699e+01 , 3.13403809e-01] ,[-3.76766971e+01,  5.46545379e-01],
@@ -54,14 +57,8 @@ controlPoints = np.array([
                 [-7.74681854e+01, -2.17359351e+00] ,[-8.87793826e+01 ,-1.75073904e+00],
                 [-9.63270000e+01, -1.81000000e+00]
                             ])
-
-print(controlPoints)
-knots = bs.get_knots()
-print(knots)
-
-
-bss = BS_curve2(8,3 , cp = controlPoints , knots = knots)
+bs.cp = controlPoints
 uq = np.linspace(0,1,101)
-y = bss.bs(uq)
+y = bs.bs(uq)
 plt.plot(y[:,0],y[:,1],'r')
 plt.show()
