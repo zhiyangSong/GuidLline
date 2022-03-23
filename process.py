@@ -178,7 +178,7 @@ def getTrainData(laneDir, limit_1, limit_2):
     end_y = tra[-1, 1]
     start_speed = math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
     np.save("{}tra".format(laneDir), tra)
-    traCP = bsplineFitting(tra[:, 0:2], cpNum=8, degree=3, distance=5, show=True)
+    traCP = bsplineFitting(tra[:, 0:2], cpNum=8, degree=3, distance=5, show=False)
     # print("轨迹拟合控制点： ", traCP)
 
     # 拼接第一段和第三段数据
@@ -193,7 +193,7 @@ def getTrainData(laneDir, limit_1, limit_2):
     # 根据中心线与左右边界距离计算道路左右边界点
     laneInfo = calcuBoundary(laneInfo)
     # 拟合道路左边界
-    boundaryCP = bsplineFitting(laneInfo[:, 2:4], cpNum=8, degree=3, distance=5, show=True)
+    boundaryCP = bsplineFitting(laneInfo[:, 2:4], cpNum=8, degree=3, distance=5, show=False)
     boundaryCP = np.array(boundaryCP).reshape(1, -1)
 
     fectures = np.array([0, 0, start_speed, end_x, end_y]).reshape(1, -1)
