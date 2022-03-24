@@ -163,7 +163,7 @@ def showTra(dataDir):
 
 
 
-def getTrainData(traDir, juncDir, limit_1, limit_2):
+def getTrainData(juncDir, traDir, limit_1, limit_2):
     """
     数据处理流程
     traDir: 车辆轨迹路径

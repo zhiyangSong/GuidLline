@@ -12,24 +12,25 @@ from matplotlib import pyplot as plt
 from process_data.B_Spline_Approximation import  BS_curve
 from process_data.uniformization import uniformization
 from process import plotMap
-from process import getTrainData
+from process import getTrainData 
 
 
 args = get_common_args()
 
 
 
-def eval(dataDir, limit_1, limit_2, cpNum, degree, distance):
+def eval(juncDir , traDir, limit_1, limit_2, cpNum, degree, distance):
     """
     查看模型预测效果
     dataDir: 原始数据路径
+
     limit_1, limit_2: 路段范围
     cpNum, degree: B样条控制点与阶数
     distance: 抽稀距离
     """
 
     # 加载模型
-    path="./model/2203_231423/episodes_1499.pth"
+    path="./model/2203_241509/episodes_1499.pth"
     model = BCNet(args.input_size, args.output_size, args)
     model.load_state_dict(torch.load(path))
     print('load network successed')
@@ -38,8 +39,8 @@ def eval(dataDir, limit_1, limit_2, cpNum, degree, distance):
     loss_function = nn.MSELoss()
 
     # 加载模型的输入和标签
-    feacture = np.load("{}features.npy".format(dataDir))
-    label = np.load("{}labels.npy".format(dataDir))
+    feacture = np.load("{}features.npy".format(traDir))
+    label = np.load("{}labels.npy".format(traDir))
     feacture = torch.FloatTensor(feacture).view(1, -1)
     # 预测出的控制点
     pred = model(feacture)
@@ -57,7 +58,7 @@ def eval(dataDir, limit_1, limit_2, cpNum, degree, distance):
     # tra = np.load("{}tra.npy".format(dataDir))[:, :2]
    
     # 拿到轨迹的开始位置
-    tra = np.loadtxt("{}tra.csv".format(dataDir), delimiter=",", dtype="double")
+    tra = np.loadtxt("{}tra.csv".format(traDir), delimiter=",", dtype="double")
     tra = tra[(limit_1 < tra[:, 0]) & (tra[:, 0] < limit_2) , 0:2]
     start_x, start_y = tra[0, 0], tra[0, 1] # 开始位置
     
@@ -85,12 +86,10 @@ def eval(dataDir, limit_1, limit_2, cpNum, degree, distance):
     plt.scatter(tra[:, 0], tra[:, 1])
     plt.plot(curves_pred[:, 0], curves_pred[:, 1], color='r')
     plt.plot(curves_label[:, 0], curves_label[:, 1], color='b')
+    
 
 
-    plotMap(dataDir=dataDir, showTra=False)    # 打印路段信息
-
-
-
+    plotMap(juncDir = juncDir )    # 打印路段信息
 
 
 
@@ -99,9 +98,27 @@ def eval(dataDir, limit_1, limit_2, cpNum, degree, distance):
 
 
 
-# 处理指定包内数据,保存成features,labels
-dataDir="./data/bag_20220108_2/"
-fectures, labels = getTrainData(dataDir, limit_1=-200, limit_2=-100)
-np.save("{}features".format(dataDir), fectures)
-np.save("{}labels".format(dataDir), labels)
-eval(dataDir, limit_1=-200, limit_2=-100, cpNum=8, degree=3, distance=5)
+# # 处理指定包内数据,保存成features,labels
+# dataDir="./data/bag_play/"
+# fectures, labels = getTrainData2(dataDir, limit_1=-850, limit_2=-700)
+# np.save("{}features".format(dataDir), fectures)
+# np.save("{}labels".format(dataDir), labels)
+# eval(dataDir, limit_1=-850, limit_2=-700, cpNum=8, degree=3, distance=5)
+
+
+
+traDir  = "./data/bag_20220110_3/"
+laneDir = './data/junction/'
+
+fectures, labels = getTrainData(juncDir = laneDir,traDir = traDir, limit_1=-200, limit_2=-100)
+
+
+# fectures, labels = getTrainData("./data3/bag_2_2022/", limit_1=-850, limit_2=-700)
+
+np.save("{}features".format(traDir), fectures)
+np.save("{}labels".format(traDir), labels)
+
+
+eval(laneDir ,traDir, limit_1=-200, limit_2=-100, cpNum=8, degree=3, distance=5)
+
+# eval(traDir, limit_1=-850, limit_2=-700, cpNum=8, degree=3, distance=5)
