@@ -5,18 +5,19 @@ from process_data.uniformization import uniformization, reducePoint
 from process_data.B_Spline_Approximation import BS_curve
 import math
 
-def plotMap(dataDir, segBegin=0, segEnd=0, tra_begin=0, tra_length=0, showTra=True):
+def plotMap(juncDir, traDir=None, segBegin=0, segEnd=0, tra_begin=0, tra_length=0):
     """
+    traDir: 轨迹路径
+    juncDir: 道路节点数据路径
     tra_begin: 需要的打印轨迹的起始点
     tra_length: 需要打印的轨迹长度。0表示到结束
     """
     # 获取路径下文件夹下个数
-    path_file_number=glob.glob(pathname='{}*.csv'.format(dataDir))
+    path_file_number=glob.glob(pathname='{}*.csv'.format(juncDir))
     if segEnd == 0:
-        segEnd = len(path_file_number) - 1
-    tra = np.loadtxt("{}tra.csv".format(dataDir), delimiter=",", dtype="double")
+        segEnd = len(path_file_number)
     for index in range(segBegin, segEnd):
-        filename = '{}segment_{}.csv'.format(dataDir, index)
+        filename = '{}segment_{}.csv'.format(juncDir, index)
         data = np.loadtxt(filename, delimiter=",", dtype="double")
         xpoint = data[:,0]
         ypoint = data[:,1]
@@ -30,7 +31,8 @@ def plotMap(dataDir, segBegin=0, segEnd=0, tra_begin=0, tra_length=0, showTra=Tr
         # right boundary
         r_b_x = xpoint + rLength*sin
         r_b_y = ypoint - rLength*cos
-        if showTra:
+        if traDir:      # 如果轨迹路径不为空，则打印轨迹
+            tra = np.loadtxt("{}tra.csv".format(traDir), delimiter=",", dtype="double")
             if tra_length == 0:
                 plt.plot(tra[tra_begin:, 0], tra[tra_begin:, 1], color='r')   # 轨迹
             else:
@@ -161,9 +163,11 @@ def showTra(dataDir):
 
 
 
-def getTrainData(traDir, laneDir, limit_1, limit_2):
+def getTrainData(traDir, juncDir, limit_1, limit_2):
     """
     数据处理流程
+    traDir: 车辆轨迹路径
+    juncDir: 道路节点轨迹
     limit_1: 下界
     limit_2: 上界
     """
@@ -182,8 +186,8 @@ def getTrainData(traDir, laneDir, limit_1, limit_2):
     # print("轨迹拟合控制点： ", traCP)
 
     # 拼接第一段和第三段数据
-    seg_1 = np.loadtxt("{}segment_0.csv".format(laneDir), delimiter=",", dtype="double")
-    seg_2 = np.loadtxt("{}segment_2.csv".format(laneDir), delimiter=",", dtype="double")
+    seg_1 = np.loadtxt("{}segment_0.csv".format(juncDir), delimiter=",", dtype="double")
+    seg_2 = np.loadtxt("{}segment_2.csv".format(juncDir), delimiter=",", dtype="double")
     laneInfo = np.vstack([seg_1, seg_2])
     # 截取了路段信息（-200， -100）
     laneInfo = laneInfo[(limit_1 < laneInfo[:, 0]) & (laneInfo[:, 0] < limit_2) , :]
