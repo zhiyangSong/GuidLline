@@ -161,14 +161,14 @@ def showTra(dataDir):
 
 
 
-def getTrainData(laneDir, limit_1, limit_2):
+def getTrainData(traDir, laneDir, limit_1, limit_2):
     """
     数据处理流程
     limit_1: 下界
     limit_2: 上界
     """
     # 获取监督数据（轨迹的B样条控制点）
-    tra = np.loadtxt("{}tra.csv".format(laneDir), delimiter=",", dtype="double")
+    tra = np.loadtxt("{}tra.csv".format(traDir), delimiter=",", dtype="double")
     tra = tra[(limit_1 < tra[:, 0]) & (tra[:, 0] < limit_2) , :]
     temp_x = tra[0, 0]     # 记录轨迹起始点坐标(全局坐标)
     temp_y = tra[0, 1]
@@ -177,7 +177,7 @@ def getTrainData(laneDir, limit_1, limit_2):
     end_x = tra[-1, 0]      # 轨迹结束相对坐标，(以轨迹初始点(0,0)为起始点)
     end_y = tra[-1, 1]
     start_speed = math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
-    np.save("{}tra".format(laneDir), tra)
+    np.save("{}tra".format(traDir), tra)
     traCP = bsplineFitting(tra[:, 0:2], cpNum=8, degree=3, distance=5, show=False)
     # print("轨迹拟合控制点： ", traCP)
 
@@ -189,7 +189,7 @@ def getTrainData(laneDir, limit_1, limit_2):
     laneInfo = laneInfo[(limit_1 < laneInfo[:, 0]) & (laneInfo[:, 0] < limit_2) , :]
     laneInfo[:, 0] -= temp_x
     laneInfo[:, 1] -= temp_y
-    np.save("{}laneInfo".format(laneDir), laneInfo)
+    np.save("{}laneInfo".format(traDir), laneInfo)
     # 根据中心线与左右边界距离计算道路左右边界点
     laneInfo = calcuBoundary(laneInfo)
     # 拟合道路左边界
@@ -204,6 +204,5 @@ def getTrainData(laneDir, limit_1, limit_2):
 
     
 
-    
 
 
