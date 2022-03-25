@@ -34,27 +34,29 @@ class BCAgent():
 
     
     def getData(self):
-        features = np.load("./data_input/features.npy")
-        labels = np.load("./data_input/labels.npy")
+        features = np.load(self.args.fea_dir)
+        labels = np.load(self.args.lab_dir)
         return features, labels
 
 
     def data_iter(self, batch_size, features, labels):
-        num_examples = len(features)
-        indices = list(range(num_examples))
-        random.shuffle(indices)  # 样本的读取顺序是随机的
+        """
+        随机返回一个 batch_size 的数据
+        """
+        num_examples = features.shape[0]
+        indices = np.random.permutation(num_examples)
         for i in range(0, num_examples, batch_size):
-            j = torch.LongTensor(indices[i: min(i + batch_size, num_examples)]) # 最后一次可能不足一个batch
-            yield  features.index_select(0, j), labels.index_select(0, j)
+            j = indices[i: min(i + batch_size, num_examples)]
+            yield features[j, :], labels[j, :]
+
 
     def train(self):
         writer = SummaryWriter(self.log_dir)
         # https://pytorch.org/tutorials/beginner/basics/quickstart_tutorial.html
         for epoch in range(self.args.episodes_num):
-            # for X, y in self.data_iter(self.batch_size, self.features, self.labels): 
-            for X, y in zip(self.features, self.labels):
-                X = torch.FloatTensor(X).view(1, -1)
-                y = torch.FloatTensor(y).view(1, -1)
+            for X, y in self.data_iter(self.batch_size, self.features, self.labels): 
+                X = torch.FloatTensor(X)
+                y = torch.FloatTensor(y)
                 pred = self.net(X)
                 loss = self.loss_function(pred, y)
                 writer.add_scalar("loss:", loss, epoch)
