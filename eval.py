@@ -30,7 +30,7 @@ def eval(juncDir , traDir, limit_1, limit_2, cpNum, degree, distance):
     """
 
     # 加载模型
-    path="./model/2203_241509/episodes_1499.pth"
+    path="./model/2203_251639/episodes_1499.pth"
     model = BCNet(args.input_size, args.output_size, args)
     model.load_state_dict(torch.load(path))
     print('load network successed')
@@ -107,18 +107,19 @@ def eval(juncDir , traDir, limit_1, limit_2, cpNum, degree, distance):
 
 
 
-traDir  = "./data/bag_20220110_3/"
-laneDir = './data/junction/'
+# traDir  = "./data/bag_20220110_3/"
+# laneDir = './data/junction/'
+# fectures, labels = getTrainData(juncDir = laneDir,traDir = traDir, limit_1=-200, limit_2=-100)
+# np.save("{}features".format(traDir), fectures)
+# np.save("{}labels".format(traDir), labels)
+# eval(laneDir ,traDir, limit_1=-200, limit_2=-100, cpNum=8, degree=3, distance=5)
 
-fectures, labels = getTrainData(juncDir = laneDir,traDir = traDir, limit_1=-200, limit_2=-100)
 
 
-# fectures, labels = getTrainData("./data3/bag_2_2022/", limit_1=-850, limit_2=-700)
-
+traDir = "./data3/bag_20220111_1/"
+laneDir = './data3/junction/'
+fectures, labels = getTrainData(juncDir = laneDir,traDir = traDir, limit_1=-850, limit_2=-700)
 np.save("{}features".format(traDir), fectures)
 np.save("{}labels".format(traDir), labels)
-
-
-eval(laneDir ,traDir, limit_1=-200, limit_2=-100, cpNum=8, degree=3, distance=5)
-
-# eval(traDir, limit_1=-850, limit_2=-700, cpNum=8, degree=3, distance=5)
+# plotMap(juncDir = laneDir )    # 打印路段信息
+eval(laneDir , traDir, limit_1=-850, limit_2=-700, cpNum=8, degree=3, distance=5)
