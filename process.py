@@ -1,4 +1,6 @@
+from cProfile import label
 from json import load
+from turtle import color
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -34,7 +36,8 @@ def plotMap(juncDir, traDir=None, segBegin=0, segEnd=0, tra_begin=0, tra_length=
         r_b_x = xpoint + rLength*sin
         r_b_y = ypoint - rLength*cos
         if traDir:      # 如果轨迹路径不为空，则打印轨迹
-            tra = np.loadtxt("{}/tra.csv".format(traDir), delimiter=",", dtype="double")
+            tra = np.load("{}/tra.npy".format(traDir))
+            # tra = np.loadtxt("{}/tra.csv".format(traDir), delimiter=",", dtype="double")
             if tra_length == 0:
                 plt.plot(tra[tra_begin:, 0], tra[tra_begin:, 1], color='r')   # 轨迹
             else:
@@ -49,12 +52,13 @@ def plotMap(juncDir, traDir=None, segBegin=0, segEnd=0, tra_begin=0, tra_length=
     plt.show()
 
 
-def preProcess(dataDir, limit):
+def preProcess(dataDir, limit, LCDirec):
     """
     dataDir: 路段数据根目录
     limit: 路段范围 limit[0]: 下界. limit[1]: 上界. limit[2]: 坐标轴
+    LCDirec: lane change direction: 换道方向: left or right
     1: 计算junction路段的边界并保存为 segment_<>.npy 数据
-    2: 计算截取后的道路边界信息 -> boundary.npy
+    2: 计算截取后的道路边界信息 -> boundary.npy (N, 2)
     3: 获取dataDir下所有截取范围后的轨迹 tra.npy
     """
     juncDir = "{}/junction".format(dataDir)
@@ -71,7 +75,7 @@ def preProcess(dataDir, limit):
     seg_2 = np.load("{}/segment_2.npy".format(juncDir))
     boundary = np.vstack([seg_1, seg_2])
     boundary = boundary[(limit[0] < boundary[:, limit[2]]) & (boundary[:, limit[2]] < limit[1]), :]
-    if limit[2] == 0:   # 左边界
+    if LCDirec == 'left':   # 左边界
         np.save("{}/boundary.npy".format(juncDir), boundary[:, 2:4])
     else: np.save("{}/boundary.npy".format(juncDir), boundary[:, 4:6])
 
@@ -83,7 +87,7 @@ def preProcess(dataDir, limit):
         np.save("{}/tra.npy".format(traFile), tra)
         
 
-def pltTra(juncDir, dataDir, traDir=None):
+def pltTra(juncDir, dataDir=None, traDir=None):
     """
     traDir==None: 打印 dataDir 下所有轨迹
     traDir!=None: 打印一条轨迹（相对坐标）
@@ -94,12 +98,12 @@ def pltTra(juncDir, dataDir, traDir=None):
         start_y = tra[0, 1]
         tra[:, 0] -= start_x
         tra[:, 1] -= start_y
-        plt.plot(tra[:, 0], tra[:, 1])
+        plt.plot(tra[:, 0], tra[:, 1], color='r')
     else:       # 打印 dataDir 下所有轨迹
         fileDirs = glob.glob(pathname = '{}/bag_2022*_*'.format(dataDir))
         for file in fileDirs:
             tra = np.loadtxt("{}/tra.csv".format(file), delimiter=",", dtype="double")
-            plt.plot(tra[:, 0], tra[:, 1])
+            plt.plot(tra[:, 0], tra[:, 1], color='r')
     
     fileDirs = glob.glob(pathname = '{}/segment*.npy'.format(juncDir))
     for file in fileDirs:
@@ -110,6 +114,11 @@ def pltTra(juncDir, dataDir, traDir=None):
         plt.plot(lane[:, 0], lane[:, 1], color='g', linestyle='--')
         plt.plot(lane[:, 2], lane[:, 3], color='b')
         plt.plot(lane[:, 4], lane[:, 5], color='b')
+    if traDir:      # 绘制边界线
+        boundary = np.load("{}/boundary.npy".format(juncDir))
+        boundary[:, 0] -= start_x
+        boundary[:, 1] -= start_y
+        plt.plot(boundary[:, 0], boundary[:, 1], color='r')
     plt.show()
 
 
@@ -201,12 +210,11 @@ def getTrainData(tra, boundary):
     end_x = tra[-1, 0]      # 轨迹结束相对坐标，(以轨迹初始点(0,0)为起始点)
     end_y = tra[-1, 1]
     start_speed = math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
-    traCP = bsplineFitting(tra=tra[:, 0:2], cpNum=7, degree=3, distance=5, show=True)
-
+    traCP = bsplineFitting(tra=tra[:, 0:2], cpNum=8, degree=3, distance=5, show=False)
     boundary[:, 0] -= temp_x
     boundary[:, 1] -= temp_y
     # 拟合道路边界
-    boundaryCP = bsplineFitting(boundary, cpNum=8, degree=3, distance=3, show=True)
+    boundaryCP = bsplineFitting(boundary, cpNum=8, degree=3, distance=5, show=False)
     boundaryCP = np.array(boundaryCP).reshape(1, -1)
 
     fectures = np.array([0, 0, start_speed, end_x, end_y]).reshape(1, -1)
@@ -215,10 +223,9 @@ def getTrainData(tra, boundary):
     return fectures, labels
 
 
-def batchProcess(dataDir, juncDir, limit, index):
+def batchProcess(dataDir, juncDir, index):
     '''
     批量处理数据
-    limit: 路段范围信息
     index: 路段数据编号
     '''
     if not os.path.exists("./data_input"):
@@ -226,14 +233,10 @@ def batchProcess(dataDir, juncDir, limit, index):
     fea = []
     lab = []
     fileDirs = glob.glob(pathname = '{}/bag_2022*_*'.format(dataDir))
+    boundary = np.load("{}/boundary.npy".format(juncDir))
     for file in fileDirs:
-        features, labels = getTrainData(
-            traDir=file, 
-            juncDir=juncDir, 
-            limit_1=limit[0], 
-            limit_2=limit[1], 
-            axis=limit[2]
-        )
+        tra = np.load("{}/tra.npy".format(file))
+        features, labels = getTrainData(tra=tra, boundary=boundary)
         fea.append(features)
         lab.append(labels)
 
@@ -248,35 +251,66 @@ def batchProcess(dataDir, juncDir, limit, index):
 def rotationTra(tra, point, angle):
     """ 输入一条轨迹，返回按 point 逆时针旋转 angle 角度后的轨迹 """
     x0, y0 = point[0], point[1]
-    newTra = np.zeros_like(tra)
-    newTra[:, 0] = (tra[:, 0]-x0)*np.cos(angle) - (tra[:, 1]-y0)*np.sin(angle)
-    newTra[:, 1] = (tra[:, 0]-x0)*np.sin(angle) + (tra[:, 1]-y0)*np.cos(angle)
-    return newTra
+    tra[:, 0] = (tra[:, 0]-x0)*np.cos(angle) - (tra[:, 1]-y0)*np.sin(angle)
+    tra[:, 1] = (tra[:, 0]-x0)*np.sin(angle) + (tra[:, 1]-y0)*np.cos(angle)
+    return tra
 
 
 def augmentData(juncDir, traDir, angle, show=False):
     """
-    通过对原始数据根据轨迹起始点为远点旋转不同角度增加数据
-    并返回对新创建数据的处理后的numpy格式网络输入
+    通过对原始数据根据轨迹起始点为原点旋转不同角度增加数据并将其返回
     traDir: 需要增强的数据
-    juncDir: 路段信息
+    juncDir: 路段信息路径
+    return: 旋转后的轨迹tra和道路边界boundary
     """
-    tra = np.loadtxt("{}/tra.csv".format(traDir), delimiter=",", dtype="double")
-    newTra = rotationTra(tra[:, :2], point=tra[0, :2], angle=angle)
-    print(tra[0, :2])
-    fileDirs = glob.glob(pathname = '{}/segment*.npy'.format(juncDir))
-    for file in fileDirs:
-        lane = np.load(file)
-        centerLine = rotationTra(tra=lane[:, :2], point=tra[0, :2], angle=angle)
-        leftLine = rotationTra(tra=lane[:, 2:4], point=tra[0, :2], angle=angle)
-        rightLine = rotationTra(tra=lane[:, 4:6], point=tra[0, :2], angle=angle)
-        newLane = np.hstack([centerLine, leftLine, rightLine])
-        if show:
-            plt.plot(newLane[:, 0], newLane[:, 1], color='g', linestyle='--')
-            plt.plot(newLane[:, 2], newLane[:, 3], color='b')
-            plt.plot(newLane[:, 4], newLane[:, 5], color='b')
+    tra = np.load("{}/tra.npy".format(traDir))
+    newTra = rotationTra(tra, point=tra[0, :2], angle=angle)
+    
+    # 对 boundary 数据进行旋转
+    boundary = np.load("{}/boundary.npy".format(juncDir))
+    NewBoundary = rotationTra(tra=boundary, point=tra[0, :2], angle=angle)
+    
     if show:
-        plt.plot(newTra[:, 0], newTra[:, 1], color='r')
-        pltTra(juncDir=juncDir, traDir=traDir)
+        # 绘制旋转后的路段信息
+        fileDirs = glob.glob(pathname = '{}/segment*.npy'.format(juncDir))
+        for file in fileDirs:
+            lane = np.load(file)
+            centerLine = rotationTra(tra=lane[:, :2], point=tra[0, :2], angle=angle)
+            leftLine = rotationTra(tra=lane[:, 2:4], point=tra[0, :2], angle=angle)
+            rightLine = rotationTra(tra=lane[:, 4:6], point=tra[0, :2], angle=angle)
+            newLane = np.hstack([centerLine, leftLine, rightLine])
+            if show:
+                plt.plot(newLane[:, 0], newLane[:, 1], color='g', linestyle='--')
+                plt.plot(newLane[:, 2], newLane[:, 3], color='b')
+                plt.plot(newLane[:, 4], newLane[:, 5], color='b')
+
+        plt.plot(newTra[:, 0], newTra[:, 1], color='r')             # 新轨迹
+        plt.plot(NewBoundary[:, 0], NewBoundary[:, 1], color='r')   # 新边界
+        pltTra(juncDir=juncDir, traDir=traDir)                      # 原有的路段信息
         plt.show()
+    return newTra, NewBoundary
+
+def batchAugmentData(juncDir, traDir):
+    """ 返回对一条数据旋转一周所得到的数据的网络输入 """
+    features, labels = [], []
+    dataNum = 71        # 360/5 -1
+    for index in np.arange(start=5, stop=360, step=5):
+        # 每旋转 5度 生成一条数据
+        angle = np.pi * (index/180.)
+        print(index)
+        tra, boundary = augmentData(juncDir=juncDir, traDir=traDir, angle=angle)
+        fea, lab = getTrainData(tra=tra, boundary=boundary)
+        print(fea.shape, " ", lab.shape)
+        features.append(fea)
+        labels.append(lab)
+    
+    # features = np.array(features).flatten().reshape(dataNum, -1)
+    # labels = np.array(labels).flatten().reshape(dataNum, -1)
+    # print(features.shape, " ", labels.shape)
+    
+
+
+
+
+    
 

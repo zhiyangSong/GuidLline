@@ -63,22 +63,37 @@ limitConfig = {
 
 if __name__ == '__main__':
     dataDir = './data'
-    traDir = './data/bag_20220108_1'
+    traDir = './data/bag_20220108_2'
     juncDir = './data/junction'
     limit = limitConfig['data_1']
     index = 1   # 区分生成的数据
+    LCDirec = 'left'        # 左边换道
+
+    # dataDir = './data2'
+    # traDir = './data2/bag_20220127_4'
+    # juncDir = './data2/junction'
+    # limit = limitConfig['data_2']
+    # index = 2               # 区分生成的数据
+    # LCDirec = 'right'       # 右边换道
     # 打印路段信息
     # plotMap(traDir=traDir, juncDir=juncDir, segBegin=0, segEnd=0)
 
-    # preProcess(juncDir=juncDir)    # 路段数据预处理：根据计算边界
-    pltTra(dataDir=dataDir, juncDir=juncDir, traDir=traDir)     # 打印轨迹
+    # 路段数据预处理
+    # preProcess(dataDir=dataDir, limit=limit, LCDirec=LCDirec)
+
+    # 打印轨迹
+    # pltTra(dataDir=dataDir, juncDir=juncDir, traDir=traDir)     
 
     # ############
-    # 数据一条数据
-    # fea, lab = getTrainData(traDir=traDir, juncDir=juncDir, limit_1=limit[0], limit_2=limit[1], axis=limit[2])
+    # 处理一条数据
+    # tra = np.load("{}/tra.npy".format(traDir))
+    # boundary = np.load("{}/boundary.npy".format(juncDir))
+    # fea, lab = getTrainData(tra=tra, boundary=boundary)
     # 对路段内所有数据进行处理
-    # fea, lab = batchProcess(dataDir=dataDir, juncDir=juncDir, limit=limit, index=index)
+    # fea, lab = batchProcess(dataDir=dataDir, juncDir=juncDir, index=index)
     # print("fea shape: ", fea.shape, " lab shape: ", lab.shape)
 
 
-    # augmentData(juncDir=juncDir, traDir=traDir, angle=np.pi/2, show=True)
+    # augmentData(juncDir=juncDir, traDir=traDir, angle=np.pi, show=True)
+
+    batchAugmentData(juncDir=juncDir, traDir=traDir)
