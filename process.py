@@ -47,17 +47,39 @@ def plotMap(juncDir, traDir=None, segBegin=0, segEnd=0, tra_begin=0, tra_length=
     plt.show()
 
 
-def preProcess(juncDir):
+def preProcess(dataDir, limit):
     """
-    计算junction路段的边界并保存
+    dataDir: 路段数据根目录
+    limit: 路段范围 limit[0]: 下界. limit[1]: 上界. limit[2]: 坐标轴
+    1: 计算junction路段的边界并保存为 segment_<>.npy 数据
+    2: 计算截取后的道路边界信息 -> boundary.npy
+    3: 获取dataDir下所有截取范围后的轨迹 tra.npy
     """
-    fileDirs = glob.glob(pathname = '{}/segment*.csv'.format(juncDir))
+    juncDir = "{}/junction".format(dataDir)
+    # 1: 计算junction路段的边界并保存为 segment_<>.npy 数据
+    fileDirs = glob.glob(pathname='{}/segment*.csv'.format(juncDir))
     for index in range(len(fileDirs)):
         lineDir = "{}/segment_{}.csv".format(juncDir, index)
-        laneInfo = np.loadtxt(lineDir, delimiter=",", dtype="double")
-        laneInfo = calcuBoundary(laneInfo)
-        np.save("{}/segment_{}".format(juncDir, index), laneInfo)
+        segment = np.loadtxt(lineDir, delimiter=",", dtype="double")
+        segment = calcuBoundary(segment)
+        np.save("{}/segment_{}".format(juncDir, index), segment)
 
+    # 2: 计算截取后的道路边界信息 -> boundary.npy
+    seg_1 = np.load("{}/segment_0.npy".format(juncDir))
+    seg_2 = np.load("{}/segment_2.npy".format(juncDir))
+    boundary = np.vstack([seg_1, seg_2])
+    boundary = boundary[(limit[0] < boundary[:, limit[2]]) & (boundary[:, limit[2]] < limit[1]), :]
+    if limit[2] == 0:   # 左边界
+        np.save("{}/boundary.npy".format(juncDir), boundary[:, 2:4])
+    else: np.save("{}/boundary.npy".format(juncDir), boundary[:, 4:6])
+    
+    # 3: 获取dataDir下所有截取范围后的轨迹 tra.npy
+    traFileDirs = glob.glob(pathname='{}/bag_2022*_*'.format(dataDir))
+    for traFile in traFileDirs:
+        tra = np.loadtxt("{}/tra.csv".format(traFile), delimiter=",", dtype="double")
+        tra = tra[(limit[0] < tra[:, limit[2]]) & (tra[:, limit[2]] < limit[1]), :]
+        np.save("{}/tra.npy".format(traFile), tra)
+        
 
 def pltTra(juncDir, dataDir, traDir=None):
     """
@@ -107,38 +129,32 @@ def calcuBoundary(laneInfo):
     r_b_x = xpoint + rLength*sin
     r_b_y = ypoint - rLength*cos
     # laneInfo shape: (dataLength, 6) (中心线、左边界，右边界)
-    laneInfo = np.vstack([xpoint, ypoint, l_b_x, l_b_y, r_b_x, r_b_y]).T
-    # print(laneInfo.shape)
-    return laneInfo
+    return np.vstack([xpoint, ypoint, l_b_x, l_b_y, r_b_x, r_b_y]).T
 
 
-def bsplineFitting(laneInfo, cpNum, degree, distance, show=False):
+def bsplineFitting(tra, cpNum, degree, distance, show=False):
     """
     使用B样条拟合轨迹点
     cpNum: 控制点个数
     degree: 阶数
     distance: 轨迹点抽取距离
+    return: 控制点
     """
-    tra = laneInfo
-    bs = BS_curve(cpNum, degree)
     # 获取左边界线拟合参数并简化轨迹点
-    boundary = uniformization(tra, distance)
-    # 打印边界点
-    xx = boundary[: , 0]
-    yy = boundary[: , 1]
-    
-    # print(boundary.shape)
-    paras = bs.estimate_parameters(boundary)
+    traPoint = uniformization(tra, distance)
+
+    bs = BS_curve(cpNum, degree)
+    paras = bs.estimate_parameters(traPoint)
     knots = bs.get_knots()
     if bs.check():
-        cp = bs.approximation(boundary)
-    uq = np.linspace(0,1,101)
-    y = bs.bs(uq)
+        cp = bs.approximation(traPoint)
+    x_ticks = np.linspace(0,1,101)
+    curves = bs.bs(x_ticks)
     if show:
-        plt.scatter(xx ,yy)
-        plt.plot(y[:,0],y[:,1],'r')
-        plt.plot(cp[:,0],cp[:,1],'y')
-        plt.scatter(cp[:,0],cp[:,1],c = 'y')
+        plt.scatter(traPoint[:, 0], traPoint[:, 1])
+        plt.plot(curves[:, 0], curves[:, 1], color='r')
+        plt.plot(cp[:, 0], cp[:, 1], color='y')
+        plt.scatter(cp[:, 0], cp[:, 1], color='y')
         plt.show()
     return cp
 
@@ -179,17 +195,17 @@ def getTrainData(traDir, juncDir, limit_1, limit_2, axis=0):
     axis: limit 范围.0: x轴坐标。1: y轴坐标 
     """
     # 获取监督数据（轨迹的B样条控制点）
-    tra = np.loadtxt("{}/tra.csv".format(traDir), delimiter=",", dtype="double")
-    tra = tra[(limit_1 < tra[:, axis]) & (tra[:, axis] < limit_2) , :]
-    temp_x = tra[0, 0]     # 记录轨迹起始点坐标(全局坐标)
+    tra = np.load("{}/tra.npy".format(traDir))
+    temp_x = tra[0, 0]      # 记录轨迹起始点坐标(全局坐标)
     temp_y = tra[0, 1]
-    tra[:, 0] -= tra[0, 0]
+    tra[:, 0] -= tra[0, 0]  # 使用相对坐标
     tra[:, 1] -= tra[0, 1]
     end_x = tra[-1, 0]      # 轨迹结束相对坐标，(以轨迹初始点(0,0)为起始点)
     end_y = tra[-1, 1]
     start_speed = math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
-    traCP = bsplineFitting(tra[:, 0:2], cpNum=8, degree=3, distance=5, show=False)
+    traCP = bsplineFitting(tra=tra[:, 0:2], cpNum=8, degree=3, distance=5, show=False)
 
+    boundary = np.load("{}/boundary.npy".format(juncDir))
     # 拼接第一段和第三段数据
     seg_1 = np.loadtxt("{}/segment_0.csv".format(juncDir), delimiter=",", dtype="double")
     seg_2 = np.loadtxt("{}/segment_2.csv".format(juncDir), delimiter=",", dtype="double")
