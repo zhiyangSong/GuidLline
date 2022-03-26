@@ -1,3 +1,4 @@
+from json import load
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -43,7 +44,8 @@ def plotMap(juncDir, traDir=None, segBegin=0, segEnd=0, tra_begin=0, tra_length=
         plt.plot(xpoint, ypoint, color='g', linestyle='--')   # 中心线
         plt.plot(l_b_x, l_b_y, color='y')
         plt.plot(r_b_x, r_b_y, color='y')
-
+    boundary = np.load("{}/boundary.npy".format(juncDir))
+    plt.plot(boundary[:, 0], boundary[:, 1], color='r')
     plt.show()
 
 
@@ -72,7 +74,7 @@ def preProcess(dataDir, limit):
     if limit[2] == 0:   # 左边界
         np.save("{}/boundary.npy".format(juncDir), boundary[:, 2:4])
     else: np.save("{}/boundary.npy".format(juncDir), boundary[:, 4:6])
-    
+
     # 3: 获取dataDir下所有截取范围后的轨迹 tra.npy
     traFileDirs = glob.glob(pathname='{}/bag_2022*_*'.format(dataDir))
     for traFile in traFileDirs:
@@ -185,17 +187,13 @@ def showOneTra(traDir):
     plt.show()
 
 
-def getTrainData(traDir, juncDir, limit_1, limit_2, axis=0):
+def getTrainData(tra, boundary):
     """
-    数据处理流程
-    traDir: 车辆轨迹路径
-    juncDir: 道路节点轨迹
-    limit_1: 下界
-    limit_2: 上界
-    axis: limit 范围.0: x轴坐标。1: y轴坐标 
+    数据处理流程，输入为截取后的数据
+    tra: 车辆轨迹 (N, 4)
+    boundary: 路段边界轨迹 (N, 2)
     """
     # 获取监督数据（轨迹的B样条控制点）
-    tra = np.load("{}/tra.npy".format(traDir))
     temp_x = tra[0, 0]      # 记录轨迹起始点坐标(全局坐标)
     temp_y = tra[0, 1]
     tra[:, 0] -= tra[0, 0]  # 使用相对坐标
@@ -203,21 +201,12 @@ def getTrainData(traDir, juncDir, limit_1, limit_2, axis=0):
     end_x = tra[-1, 0]      # 轨迹结束相对坐标，(以轨迹初始点(0,0)为起始点)
     end_y = tra[-1, 1]
     start_speed = math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
-    traCP = bsplineFitting(tra=tra[:, 0:2], cpNum=8, degree=3, distance=5, show=False)
+    traCP = bsplineFitting(tra=tra[:, 0:2], cpNum=7, degree=3, distance=5, show=True)
 
-    boundary = np.load("{}/boundary.npy".format(juncDir))
-    # 拼接第一段和第三段数据
-    seg_1 = np.loadtxt("{}/segment_0.csv".format(juncDir), delimiter=",", dtype="double")
-    seg_2 = np.loadtxt("{}/segment_2.csv".format(juncDir), delimiter=",", dtype="double")
-    laneInfo = np.vstack([seg_1, seg_2])
-    laneInfo = laneInfo[(limit_1 < laneInfo[:, axis]) & (laneInfo[:, axis] < limit_2) , :]
-    laneInfo[:, 0] -= temp_x
-    laneInfo[:, 1] -= temp_y
-    # np.save("{}/laneInfo".format(traDir), laneInfo)
-    # 根据中心线与左右边界距离计算道路左右边界点
-    laneInfo = calcuBoundary(laneInfo)
-    # 拟合道路左边界
-    boundaryCP = bsplineFitting(laneInfo[:, 2:4], cpNum=8, degree=3, distance=5, show=False)
+    boundary[:, 0] -= temp_x
+    boundary[:, 1] -= temp_y
+    # 拟合道路边界
+    boundaryCP = bsplineFitting(boundary, cpNum=8, degree=3, distance=3, show=True)
     boundaryCP = np.array(boundaryCP).reshape(1, -1)
 
     fectures = np.array([0, 0, start_speed, end_x, end_y]).reshape(1, -1)
