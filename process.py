@@ -169,6 +169,7 @@ def bsplineFitting(tra, cpNum, degree, distance, show=False):
         plt.show()
     return cp
 
+
 def polyFitting(laneInfo):
     """
     使用多项式拟合轨迹
@@ -250,10 +251,11 @@ def batchProcess(dataDir, juncDir, index):
 
 def rotationTra(tra, point, angle):
     """ 输入一条轨迹，返回按 point 逆时针旋转 angle 角度后的轨迹 """
+    newTra = np.zeros_like(tra)
     x0, y0 = point[0], point[1]
-    tra[:, 0] = (tra[:, 0]-x0)*np.cos(angle) - (tra[:, 1]-y0)*np.sin(angle)
-    tra[:, 1] = (tra[:, 0]-x0)*np.sin(angle) + (tra[:, 1]-y0)*np.cos(angle)
-    return tra
+    newTra[:, 0] = (tra[:, 0]-x0)*np.cos(angle) - (tra[:, 1]-y0)*np.sin(angle)
+    newTra[:, 1] = (tra[:, 0]-x0)*np.sin(angle) + (tra[:, 1]-y0)*np.cos(angle)
+    return newTra
 
 
 def augmentData(juncDir, traDir, angle, show=False):
@@ -290,25 +292,45 @@ def augmentData(juncDir, traDir, angle, show=False):
         plt.show()
     return newTra, NewBoundary
 
-def batchAugmentData(juncDir, traDir):
+
+def getAugmentTrainData(juncDir, traDir, step):
     """ 返回对一条数据旋转一周所得到的数据的网络输入 """
     features, labels = [], []
-    dataNum = 71        # 360/5 -1
-    for index in np.arange(start=5, stop=360, step=5):
+    dataNum = int(360 / step)
+    for index in np.arange(start=0, stop=360, step=step):
         # 每旋转 5度 生成一条数据
         angle = np.pi * (index/180.)
-        print(index)
         tra, boundary = augmentData(juncDir=juncDir, traDir=traDir, angle=angle)
+        # plt.plot(tra[:, 0], tra[:, 1])
         fea, lab = getTrainData(tra=tra, boundary=boundary)
-        print(fea.shape, " ", lab.shape)
         features.append(fea)
         labels.append(lab)
-    
-    # features = np.array(features).flatten().reshape(dataNum, -1)
-    # labels = np.array(labels).flatten().reshape(dataNum, -1)
-    # print(features.shape, " ", labels.shape)
-    
+    # plt.show()
+    features = np.array(features).flatten().reshape(dataNum, -1)
+    labels = np.array(labels).flatten().reshape(dataNum, -1)
+    return features, labels
 
+
+def batchAugProcess(dataDir, index, step):
+    """
+    处理 dataDir 下所有数据
+    index: 保存训练数据的后缀
+    step: 每隔 step 度生成一条数据
+    """
+    juncDir = "{}/junction".format(dataDir)
+    fileDirs = glob.glob(pathname = '{}/bag_2022*_*'.format(dataDir))
+    features = np.zeros(shape=(1, 23))
+    labels = np.zeros(shape=(1, 18))
+    for file in fileDirs:
+        fea, lab = getAugmentTrainData(juncDir=juncDir, traDir=file, step=step)
+        print(file, ":", fea.shape, " ", lab.shape)
+        features = np.vstack([features, fea])
+        labels = np.vstack([labels, lab])
+    features = np.delete(features, 0, axis=0)
+    labels = np.delete(labels, 0, axis=0)
+    np.save("{}/features_aug_{}".format("./data_input", index), features)
+    np.save("{}/labels_aug_{}".format("./data_input", index), labels)
+    print("feas shape: ", features.shape, " labs shape: ", labels.shape)
 
 
 

@@ -62,26 +62,26 @@ limitConfig = {
 
 
 if __name__ == '__main__':
-    dataDir = './data'
-    traDir = './data/bag_20220108_2'
-    juncDir = './data/junction'
-    limit = limitConfig['data_1']
-    index = 1   # 区分生成的数据
-    LCDirec = 'left'        # 左边换道
+    # dataDir = './data'
+    # traDir = './data/bag_20220108_2'
+    # juncDir = './data/junction'
+    # limit = limitConfig['data_1']
+    # index = 1   # 区分生成的数据
+    # LCDirec = 'left'        # 左边换道
 
-    # dataDir = './data2'
-    # traDir = './data2/bag_20220127_4'
-    # juncDir = './data2/junction'
-    # limit = limitConfig['data_2']
-    # index = 2               # 区分生成的数据
-    # LCDirec = 'right'       # 右边换道
+    dataDir = './data2'
+    traDir = './data2/bag_20220127_4'
+    juncDir = './data2/junction'
+    limit = limitConfig['data_2']
+    index = 2               # 区分生成的数据
+    LCDirec = 'right'       # 右边换道
     # 打印路段信息
     # plotMap(traDir=traDir, juncDir=juncDir, segBegin=0, segEnd=0)
 
     # 路段数据预处理
     # preProcess(dataDir=dataDir, limit=limit, LCDirec=LCDirec)
 
-    # 打印轨迹
+    # 打印轨迹(相对坐标)
     # pltTra(dataDir=dataDir, juncDir=juncDir, traDir=traDir)     
 
     # ############
@@ -94,6 +94,9 @@ if __name__ == '__main__':
     # print("fea shape: ", fea.shape, " lab shape: ", lab.shape)
 
 
-    # augmentData(juncDir=juncDir, traDir=traDir, angle=np.pi, show=True)
+    # augmentData(juncDir=juncDir, traDir=traDir, angle=np.pi*(5/180), show=True)
 
-    batchAugmentData(juncDir=juncDir, traDir=traDir)
+    feas, labs = getAugmentTrainData(juncDir=juncDir, traDir=traDir, step=5)
+    print(feas.shape, " ", labs.shape)
+
+    # batchAugProcess(dataDir=dataDir, index=index, step=5)

@@ -65,8 +65,8 @@ class BCAgent():
                 loss.backward()
                 self.optimizer.step()
             
-            # if epoch%self.args.save_interval == 0:
-            #     self.save(epoch)
+            if epoch%self.args.save_interval == 0:
+                self.save(epoch)
             print(f"epoch: {epoch:<4} loss: {loss:>7f}")
         self.save(epoch)
 

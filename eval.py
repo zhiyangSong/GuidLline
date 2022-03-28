@@ -93,17 +93,19 @@ limitConfig = {
     "data_1": [-200, -100, 0],      # x 轴坐标
     "data_2": [-3910, -3810, 1]     # y 轴坐标
 }
-limit = limitConfig["data_1"]
-traDir="./data/bag_20220108_1"
-juncDir = './data/junction'
-modelPath = './model/2203_251706/episodes_999.pth'
-fectures, labels = getTrainData(
-                    traDir=traDir, 
-                    juncDir=juncDir, 
-                    limit_1=limit[0], 
-                    limit_2=limit[1],
-                    axis=limit[2]
-                )
+# limit = limitConfig["data_1"]
+# traDir="./data/bag_20220108_1"
+# juncDir = './data/junction'
+
+limit = limitConfig["data_2"]
+traDir="./data2/bag_20220112_1"
+juncDir = './data2/junction'
+
+# modelPath = './model/2203_251706/episodes_999.pth'
+modelPath = './model/2203_281257/episodes_999.pth'
+tra = np.load("{}/tra.npy".format(traDir))
+boundary = np.load("{}/boundary.npy".format(juncDir))
+fectures, labels = getTrainData(tra=tra, boundary=boundary)
 np.save("{}/features".format(traDir), fectures)
 np.save("{}/labels".format(traDir), labels)
 
