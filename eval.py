@@ -18,7 +18,7 @@ args = get_common_args()
 
 
 
-def eval(juncDir, traDir, modelPath, cpNum, degree, distance):
+def eval(feature, label, juncDir, traDir, modelPath, cpNum, degree, distance):
     """
     查看模型预测效果
     juncDir: 车道轨迹路径
@@ -32,12 +32,8 @@ def eval(juncDir, traDir, modelPath, cpNum, degree, distance):
     print('load network successed')
     model.eval()
 
-    # 加载模型的输入和标签
-    feacture = np.load("{}/features.npy".format(traDir))
-    label = np.load("{}/labels.npy".format(traDir))
-    feacture = torch.FloatTensor(feacture).view(1, -1)
-    # 预测出的控制点
-    pred = model(feacture)
+    feature = torch.FloatTensor(feature).view(1, -1)
+    pred = model(feature)
 
     loss_function = nn.MSELoss()
     loss = loss_function(pred, torch.FloatTensor(label).view(1, -1))
@@ -93,25 +89,24 @@ limitConfig = {
     "data_1": [-200, -100, 0],      # x 轴坐标
     "data_2": [-3910, -3810, 1]     # y 轴坐标
 }
-# limit = limitConfig["data_1"]
-# traDir="./data/bag_20220108_1"
-# juncDir = './data/junction'
+limit = limitConfig["data_1"]
+traDir="./data/bag_20220108_2"
+juncDir = './data/junction'
 
-limit = limitConfig["data_2"]
-traDir="./data2/bag_20220112_1"
-juncDir = './data2/junction'
+# limit = limitConfig["data_2"]
+# traDir="./data2/bag_20220112_1"
+# juncDir = './data2/junction'
 
-# modelPath = './model/2203_251706/episodes_999.pth'
-modelPath = './model/2203_281257/episodes_999.pth'
+modelPath = './model/2203_281659/episodes_999.pth'
 tra = np.load("{}/tra.npy".format(traDir))
 boundary = np.load("{}/boundary.npy".format(juncDir))
-fectures, labels = getTrainData(tra=tra, boundary=boundary)
-np.save("{}/features".format(traDir), fectures)
-np.save("{}/labels".format(traDir), labels)
+feature, label = getTrainData(tra=tra, boundary=boundary)
 
 eval(
+    feature=feature,
+    label=label,
     modelPath=modelPath,
     juncDir=juncDir, 
     traDir=traDir,
-    cpNum=8, degree=3, distance=5
+    cpNum=8, degree=3, distance=3
 )
