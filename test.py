@@ -62,19 +62,19 @@ limitConfig = {
 
 
 if __name__ == '__main__':
-    dataDir = './data'
-    traDir = './data/bag_20220108_2'
-    juncDir = './data/junction'
-    limit = limitConfig['data_1']
-    index = 1   # 区分生成的数据
-    LCDirec = 'left'        # 左边换道
+    # dataDir = './data'
+    # traDir = './data/bag_20220108_2'
+    # juncDir = './data/junction'
+    # limit = limitConfig['data_1']
+    # index = 1   # 区分生成的数据
+    # LCDirec = 'left'        # 左边换道
 
-    # dataDir = './data2'
-    # traDir = './data2/bag_20220127_4'
-    # juncDir = './data2/junction'
-    # limit = limitConfig['data_2']
-    # index = 2               # 区分生成的数据
-    # LCDirec = 'right'       # 右边换道
+    dataDir = './data2'
+    traDir = './data2/bag_20220127_4'
+    juncDir = './data2/junction'
+    limit = limitConfig['data_2']
+    index = 2               # 区分生成的数据
+    LCDirec = 'right'       # 右边换道
     # 打印路段信息
     # plotMap(traDir=traDir, juncDir=juncDir, segBegin=0, segEnd=0)
 
@@ -96,9 +96,11 @@ if __name__ == '__main__':
 
     # augmentData(juncDir=juncDir, traDir=traDir, angle=np.pi*(30/180), show=True)
 
-    # feas, labs = getAugmentTrainData(juncDir=juncDir, traDir=traDir, step=5)
-    # print(feas.shape, " ", labs.shape)
+    feas, labs = getAugmentTrainData(juncDir=juncDir, traDir=traDir, step=5)
+    print(feas.shape, " ", labs.shape)
 
     # batchAugProcess(dataDir=dataDir, index=index, step=5)
 
     # fun()
+
+    # transfor(juncDir=juncDir, traDir=traDir, show=True)

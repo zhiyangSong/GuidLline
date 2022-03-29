@@ -1,5 +1,4 @@
-from cProfile import label
-from json import load
+
 from turtle import color
 import matplotlib.pyplot as plt
 import numpy as np
@@ -118,7 +117,7 @@ def pltTra(juncDir, dataDir=None, traDir=None):
         boundary = np.load("{}/boundary.npy".format(juncDir))
         boundary[:, 0] -= start_x
         boundary[:, 1] -= start_y
-        plt.plot(boundary[:, 0], boundary[:, 1], color='r')
+        # plt.plot(boundary[:, 0], boundary[:, 1], color='r')
     plt.show()
 
 
@@ -250,11 +249,15 @@ def batchProcess(dataDir, juncDir, index):
 
 
 def rotationTra(tra, point, angle):
-    """ 输入一条轨迹，返回按 point 逆时针旋转 angle 角度后的轨迹 """
+    """ 输入一条轨迹，返回按 point 旋转 angle 角度后的轨迹 """
     newTra = np.zeros_like(tra)
     x0, y0 = point[0], point[1]
-    newTra[:, 0] = (tra[:, 0]-x0)*np.cos(angle) - (tra[:, 1]-y0)*np.sin(angle)
-    newTra[:, 1] = (tra[:, 0]-x0)*np.sin(angle) + (tra[:, 1]-y0)*np.cos(angle)
+    # 逆时针
+    # newTra[:, 0] = (tra[:, 0]-x0)*np.cos(angle) - (tra[:, 1]-y0)*np.sin(angle)
+    # newTra[:, 1] = (tra[:, 0]-x0)*np.sin(angle) + (tra[:, 1]-y0)*np.cos(angle)
+    # 顺时针
+    newTra[:, 0] = (tra[:, 0]-x0)*np.cos(angle) + (tra[:, 1]-y0)*np.sin(angle)
+    newTra[:, 1] = (tra[:, 1]-y0)*np.cos(angle) - (tra[:, 0]-x0)*np.sin(angle)
     return newTra
 
 
@@ -301,11 +304,11 @@ def getAugmentTrainData(juncDir, traDir, step):
         # 每旋转 5度 生成一条数据
         angle = np.pi * (index/180.)
         tra, boundary = augmentData(juncDir=juncDir, traDir=traDir, angle=angle)
-        # plt.plot(tra[:, 0], tra[:, 1])
+        plt.plot(tra[:, 0], tra[:, 1])
         fea, lab = getTrainData(tra=tra, boundary=boundary)
         features.append(fea)
         labels.append(lab)
-    # plt.show()
+    plt.show()
     features = np.array(features).flatten().reshape(dataNum, -1)
     labels = np.array(labels).flatten().reshape(dataNum, -1)
     return features, labels
@@ -333,6 +336,40 @@ def batchAugProcess(dataDir, index, step):
     print("feas shape: ", features.shape, " labs shape: ", labels.shape)
 
 
+def rot(tra, point, sin, cos):
+    """ 顺时针旋转 """
+    newTra = np.zeros_like(tra)
+    x0, y0 = point[0], point[1]
+    newTra[:, 0] = (tra[:, 0]-x0)*cos + (tra[:, 1]-y0)*sin
+    newTra[:, 1] = (tra[:, 1]-y0)*cos - (tra[:, 0]-x0)*sin
+    return newTra
 
-    
 
+def transfor(juncDir, traDir, show):
+    begin_seg = np.loadtxt("{}/segment_0.csv".format(juncDir), delimiter=",", dtype="double")
+    point = [begin_seg[0, 0], begin_seg[0, 1]]
+    cos = begin_seg[0, 2]
+    sin = begin_seg[0, 3]
+
+    boundary = np.load("{}/boundary.npy".format(juncDir))
+    tra = np.load("{}/tra.npy".format(traDir))
+    newTra = rot(tra, point=point, sin=sin, cos=cos)
+    newBound = rot(boundary, point=point, sin=sin, cos=cos)
+    if show:
+        # 绘制旋转后的路段信息
+        fileDirs = glob.glob(pathname = '{}/segment*.npy'.format(juncDir))
+        for file in fileDirs:
+            lane = np.load(file)
+            centerLine = rot(tra=lane[:, :2], point=point, sin=sin, cos=cos)
+            leftLine = rot(tra=lane[:, 2:4], point=point, sin=sin, cos=cos)
+            rightLine = rot(tra=lane[:, 4:6], point=point, sin=sin, cos=cos)
+            newLane = np.hstack([centerLine, leftLine, rightLine])
+            if show:
+                plt.plot(newLane[:, 0], newLane[:, 1], color='g', linestyle='--')
+                plt.plot(newLane[:, 2], newLane[:, 3], color='b')
+                plt.plot(newLane[:, 4], newLane[:, 5], color='b')
+
+        plt.plot(newTra[:, 0], newTra[:, 1], color='r')         # 新的轨迹
+        plt.plot(newBound[:, 0], newBound[:, 1], color='r')     # 新边界
+        # pltTra(juncDir=juncDir, traDir=traDir)                  # 原有的路段信息
+        plt.show()
