@@ -39,19 +39,17 @@ def fun():
     """
     把各个路段数据整合
     """
-
-    fea_1 = np.load('./data_input/features_1.npy')
-    fea_2 = np.load('./data_input/features_2.npy')
+    fea_1 = np.load('./data_input/features_aug_1.npy')
+    fea_2 = np.load('./data_input/features_aug_2.npy')
     features = np.vstack([fea_1, fea_2])
     print(features.shape)
-    np.save('./data_input/features', features)
+    np.save('./data_input/features_aug_10', features)
 
-    lab_1 = np.load('./data_input/labels_1.npy')
-    lab_2 = np.load('./data_input/labels_2.npy')
+    lab_1 = np.load('./data_input/labels_aug_1.npy')
+    lab_2 = np.load('./data_input/labels_aug_2.npy')
     labels = np.vstack([lab_1, lab_2])
     print(labels.shape)
-    np.save('./data_input/labels', labels)
-
+    np.save('./data_input/labels_aug_10', labels)
 
 
 
@@ -64,21 +62,19 @@ limitConfig = {
 
 
 if __name__ == '__main__':
+    # dataDir = './data'
+    # traDir = './data/bag_20220108_2'
+    # juncDir = './data/junction'
+    # limit = limitConfig['data_1']
+    # index = 1   # 区分生成的数据
+    # LCDirec = 'left'        # 左边换道
 
-    dataDir = './data'
-    traDir = './data/bag_20220108_2'
-    juncDir = './data/junction'
-    limit = limitConfig['data_1']
-    index = 1   # 区分生成的数据
-    LCDirec = 'left'        # 左边换道
-
-    # dataDir = './data2'
-    # traDir = './data2/bag_20220127_4'
-    # juncDir = './data2/junction'
-    # limit = limitConfig['data_2']
-    # index = 2               # 区分生成的数据
-    # LCDirec = 'right'       # 右边换道
-
+    dataDir = './data2'
+    traDir = './data2/bag_20220127_4'
+    juncDir = './data2/junction'
+    limit = limitConfig['data_2']
+    index = 2               # 区分生成的数据
+    LCDirec = 'right'       # 右边换道
     # 打印路段信息
     # plotMap(traDir=traDir, juncDir=juncDir, segBegin=0, segEnd=0)
 
@@ -98,13 +94,12 @@ if __name__ == '__main__':
     # print("fea shape: ", fea.shape, " lab shape: ", lab.shape)
 
 
-    # ###########  旋转 增加数据 ##################
     # augmentData(juncDir=juncDir, traDir=traDir, angle=np.pi*(30/180), show=True)
-    # feas, labs = getAugmentTrainData(juncDir=juncDir, traDir=traDir, step=5)
-    # print(feas.shape, " ", labs.shape)
-    # batchAugProcess(dataDir=dataDir, index=index, step=5)
-    # ###########################################
 
+    feas, labs = getAugmentTrainData(juncDir=juncDir, traDir=traDir, step=5)
+    print(feas.shape, " ", labs.shape)
+
+    # batchAugProcess(dataDir=dataDir, index=index, step=5)
 
     # fun()
 

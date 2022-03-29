@@ -203,6 +203,7 @@ def getTrainData(tra, boundary):
     boundary: 路段边界轨迹 (N, 2)
     """
     # 获取监督数据（轨迹的B样条控制点）
+
     # temp_x = tra[0, 0]      # 记录轨迹起始点坐标(全局坐标)
     # temp_y = tra[0, 1]
     # tra[:, 0] -= tra[0, 0]  # 使用相对坐标
@@ -213,6 +214,7 @@ def getTrainData(tra, boundary):
     traCP = bsplineFitting(tra=tra[:, 0:2], cpNum=8, degree=3, distance=5, show=False)
     # boundary[:, 0] -= temp_x
     # boundary[:, 1] -= temp_y
+
     # 拟合道路边界
     boundaryCP = bsplineFitting(boundary, cpNum=8, degree=3, distance=5, show=False)
     boundaryCP = np.array(boundaryCP).reshape(1, -1)
@@ -264,6 +266,7 @@ def rotationTra(tra, point, angle):
     return newTra
 
 
+
 def augmentData(juncDir, traDir, angle, show=False):
     """
     通过对原始数据根据轨迹起始点为原点旋转不同角度增加数据并将其返回
@@ -299,6 +302,18 @@ def augmentData(juncDir, traDir, angle, show=False):
     return newTra, NewBoundary
 
 
+def rotationTra(tra, point, angle):
+    """ 输入一条轨迹，返回按 point 旋转 angle 角度后的轨迹 """
+    newTra = np.zeros_like(tra)
+    x0, y0 = point[0], point[1]
+    # 逆时针
+    # newTra[:, 0] = (tra[:, 0]-x0)*np.cos(angle) - (tra[:, 1]-y0)*np.sin(angle)
+    # newTra[:, 1] = (tra[:, 0]-x0)*np.sin(angle) + (tra[:, 1]-y0)*np.cos(angle)
+    # 顺时针
+    newTra[:, 0] = (tra[:, 0]-x0)*np.cos(angle) + (tra[:, 1]-y0)*np.sin(angle)
+    newTra[:, 1] = (tra[:, 1]-y0)*np.cos(angle) - (tra[:, 0]-x0)*np.sin(angle)
+    return newTra
+
 def getAugmentTrainData(juncDir, traDir, step):
     """ 返回对一条数据旋转一周所得到的数据的网络输入 """
     features, labels = [], []
@@ -315,6 +330,7 @@ def getAugmentTrainData(juncDir, traDir, step):
     features = np.array(features).flatten().reshape(dataNum, -1)
     labels = np.array(labels).flatten().reshape(dataNum, -1)
     return features, labels
+
 
 
 def batchAugProcess(dataDir, index, step):
@@ -348,11 +364,13 @@ def rot(tra, point, sin, cos):
     return newTra
 
 
+
 def transfor(juncDir, traDir, show=False):
     """
     变换坐标使得车道中心线第一个点的朝 x 轴正向
     return: 变换后的轨迹tra和边界boundary
     """
+
     begin_seg = np.loadtxt("{}/segment_0.csv".format(juncDir), delimiter=",", dtype="double")
     point = [begin_seg[0, 0], begin_seg[0, 1]]
     cos = begin_seg[0, 2]
@@ -379,5 +397,7 @@ def transfor(juncDir, traDir, show=False):
         plt.plot(newTra[:, 0], newTra[:, 1], color='r')         # 新的轨迹
         plt.plot(newBound[:, 0], newBound[:, 1], color='r')     # 新边界
         # pltTra(juncDir=juncDir, traDir=traDir)                  # 原有的路段信息
+
         plt.show()
     return newTra, newBound
+
