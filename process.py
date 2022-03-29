@@ -203,24 +203,26 @@ def getTrainData(tra, boundary):
     boundary: 路段边界轨迹 (N, 2)
     """
     # 获取监督数据（轨迹的B样条控制点）
-    temp_x = tra[0, 0]      # 记录轨迹起始点坐标(全局坐标)
-    temp_y = tra[0, 1]
-    tra[:, 0] -= tra[0, 0]  # 使用相对坐标
-    tra[:, 1] -= tra[0, 1]
-    end_x = tra[-1, 0]      # 轨迹结束相对坐标，(以轨迹初始点(0,0)为起始点)
-    end_y = tra[-1, 1]
+    # temp_x = tra[0, 0]      # 记录轨迹起始点坐标(全局坐标)
+    # temp_y = tra[0, 1]
+    # tra[:, 0] -= tra[0, 0]  # 使用相对坐标
+    # tra[:, 1] -= tra[0, 1]
+    # end_x = tra[-1, 0]      # 轨迹结束相对坐标
+    # end_y = tra[-1, 1]
     start_speed = math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
     traCP = bsplineFitting(tra=tra[:, 0:2], cpNum=8, degree=3, distance=5, show=False)
-    boundary[:, 0] -= temp_x
-    boundary[:, 1] -= temp_y
+    # boundary[:, 0] -= temp_x
+    # boundary[:, 1] -= temp_y
     # 拟合道路边界
     boundaryCP = bsplineFitting(boundary, cpNum=8, degree=3, distance=5, show=False)
     boundaryCP = np.array(boundaryCP).reshape(1, -1)
 
-    fectures = np.array([0, 0, start_speed, end_x, end_y]).reshape(1, -1)
-    fectures = np.hstack([fectures, boundaryCP])
+    # fectures = np.array([0, 0, start_speed, end_x, end_y]).reshape(1, -1)
+    # 开始点、开始速度、结束点
+    features = np.array([tra[0, 0], tra[0, 1], start_speed, tra[-1, 0], tra[-1, 1]]).reshape(1, -1)
+    features = np.hstack([features, boundaryCP])
     labels = np.array(traCP).reshape(1, -1)
-    return fectures, labels
+    return features, labels
 
 
 def batchProcess(dataDir, juncDir, index):
@@ -235,7 +237,8 @@ def batchProcess(dataDir, juncDir, index):
     fileDirs = glob.glob(pathname = '{}/bag_2022*_*'.format(dataDir))
     boundary = np.load("{}/boundary.npy".format(juncDir))
     for file in fileDirs:
-        tra = np.load("{}/tra.npy".format(file))
+        # tra = np.load("{}/tra.npy".format(file))
+        tra, boundary = transfor(juncDir=juncDir, traDir=file)
         features, labels = getTrainData(tra=tra, boundary=boundary)
         fea.append(features)
         lab.append(labels)
@@ -345,7 +348,11 @@ def rot(tra, point, sin, cos):
     return newTra
 
 
-def transfor(juncDir, traDir, show):
+def transfor(juncDir, traDir, show=False):
+    """
+    变换坐标使得车道中心线第一个点的朝 x 轴正向
+    return: 变换后的轨迹tra和边界boundary
+    """
     begin_seg = np.loadtxt("{}/segment_0.csv".format(juncDir), delimiter=",", dtype="double")
     point = [begin_seg[0, 0], begin_seg[0, 1]]
     cos = begin_seg[0, 2]
@@ -373,3 +380,4 @@ def transfor(juncDir, traDir, show):
         plt.plot(newBound[:, 0], newBound[:, 1], color='r')     # 新边界
         # pltTra(juncDir=juncDir, traDir=traDir)                  # 原有的路段信息
         plt.show()
+    return newTra, newBound
