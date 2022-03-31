@@ -15,6 +15,12 @@ from process import plotMap
 from process import getTrainData  ,getTrainData2
 
 
+
+"""
+老办法
+先test_me
+模型训练
+eval_2"""
 args = get_common_args()
 
 
@@ -39,23 +45,39 @@ def eval(juncDir , traDir, limit_1, limit_2, cpNum, degree, distance):
     loss_function = nn.MSELoss()
 
     # 加载模型的输入和标签
-    feacture = np.load("{}features.npy".format(traDir))
-    label = np.load("{}labels.npy".format(traDir))
+    feacture = np.load("{}/features.npy".format(traDir))
+    label = np.load("{}/labels.npy".format(traDir))
     feacture = torch.FloatTensor(feacture).view(1, -1)
     # 预测出的控制点
     pred = model(feacture)
 
 
-   
+    # 拟合为18个数9个控制点时，这样操作
     label = label.reshape(-1, 2)
     pred = pred.view(-1, 2).detach().numpy()   
     
+    # # 当拟合的是16时候，需要这样操作
+    # # 将控制点加上最初的0，0
+    # label = label.reshape(1,-1)
+    # label = np.insert(label , 0 ,[0,0])
+    # label = label.reshape(-1, 2)
+   
+    # pred = pred.view(1,-1).detach().numpy()   
+    # pred = np.insert(pred  ,  0 ,[0,0])
+    # pred = pred.reshape(-1,2)
+
+
+
+
+    # # 当labels 多一位代表路口时
     # # 将label  和pred  都转为numpy,并删除最后一位表示路口的变量
     # label = np.delete(label, -1, axis=1)
     # label = label.reshape(-1, 2)
     # pred = pred.view(1, -1).detach().numpy()
     # pred = np.delete(pred, -1, axis=1)
     # pred = pred.reshape(-1,2)
+
+
 
 
 
@@ -69,7 +91,7 @@ def eval(juncDir , traDir, limit_1, limit_2, cpNum, degree, distance):
     # tra = np.load("{}tra.npy".format(dataDir))[:, :2]
    
     # 拿到轨迹的开始位置
-    tra = np.loadtxt("{}tra.csv".format(traDir), delimiter=",", dtype="double")
+    tra = np.loadtxt("{}/tra.csv".format(traDir), delimiter=",", dtype="double")
     tra = tra[(limit_1 < tra[:, 0]) & (tra[:, 0] < limit_2) , 0:2]
     start_x, start_y = tra[0, 0], tra[0, 1] # 开始位置
     
@@ -136,22 +158,22 @@ def eval(juncDir , traDir, limit_1, limit_2, cpNum, degree, distance):
 
 
 
-traDir = "./data/bag_20220108_1/"
-laneDir = './data/junction/'
-fectures, labels = getTrainData2(juncDir = laneDir,traDir = traDir, limit_1=-200, limit_2=-100)
+traDir = "./data/bag_20220108_1"
+juncDir = './data/junction'
+fectures, labels = getTrainData2(juncDir = juncDir,traDir = traDir, limit_1=-200, limit_2=-100)
 np.save("{}features".format(traDir), fectures)
 np.save("{}labels".format(traDir), labels)
-eval(laneDir ,traDir, limit_1=-200, limit_2=-100, cpNum=8, degree=3, distance=5)
+eval(juncDir ,traDir, limit_1=-200, limit_2=-100, cpNum=8, degree=3, distance=5)
 
 
 
 
 
-traDir = "./data3/bag_20220110_1/"
-laneDir = './data3/junction/'
+traDir = "./data3/bag_20220110_1"
+juncDir = './data3/junction'
 
-fectures, labels = getTrainData2(juncDir = laneDir,traDir = traDir, limit_1=-850, limit_2=-700)
-np.save("{}features".format(traDir), fectures)
-np.save("{}labels".format(traDir), labels)
+fectures, labels = getTrainData2(juncDir = juncDir,traDir = traDir, limit_1=-850, limit_2=-700)
+np.save("{}/features".format(traDir), fectures)
+np.save("{}/labels".format(traDir), labels)
 # plotMap(juncDir = laneDir )    # 打印路段信息
-eval(laneDir , traDir, limit_1=-850, limit_2=-700, cpNum=8, degree=3, distance=5)
+eval(juncDir , traDir, limit_1=-850, limit_2=-700, cpNum=8, degree=3, distance=5)

@@ -58,7 +58,19 @@ class BCAgent():
                 X = torch.FloatTensor(X)
                 y = torch.FloatTensor(y)
                 pred = self.net(X)
+
+                # pred = pred.reshape(-1,2)
+                # y = y.reshape(-1,2)
+                # loss = torch.zeros([1,1])
+                # for i in range(9):
+                #     loss  += ((pred[i][0]- y[i][0])**2 +(pred[i][1]- y[i][1])**2)
+                
+
+
+                
+
                 loss = self.loss_function(pred, y)
+              
                 writer.add_scalar("loss:", loss, epoch)
 
                 self.optimizer.zero_grad()
