@@ -21,7 +21,7 @@ class BCAgent():
         
         self.net = BCNet(self.input_size, self.output_size, args)
         self.optimizer = torch.optim.Adam(self.net.parameters(), lr=self.learning_rate)
-        self.loss_function = nn.MSELoss()
+        self.loss_function = nn.MSELoss(reduction = 'sum')
 
         time_now = time.strftime('%y%m_%d%H%M')
         self.save_dir = "{}/{}".format(args.save_dir, time_now)
