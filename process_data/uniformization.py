@@ -23,7 +23,7 @@ def uniformization(tra, len, show=False):
             # print("dis = {}".format(dis))
             i = j
     saveList = np.array(saveList)
-    print("saveList len: ", saveList.shape)
+    # print("saveList len: ", saveList.shape)
     if show:
         plt.scatter(saveList[:, 0], saveList[:, 1])
         plt.show()

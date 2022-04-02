@@ -1,6 +1,6 @@
 import os
 from matplotlib import pyplot as plt 
-from process2 import *
+from process import *
 import numpy as np
 import glob
 from process_data.B_Spline_Approximation import BS_curve
@@ -95,13 +95,13 @@ if __name__ == '__main__':
     preProcess(dataDir=dataDir, limit=limit, LCDirec=LCDirec)
     print("预处理完成，道路边界信息存在junction的boundary.npy,轨迹信息存在每个包的tra.npy")
 
-    # # 变换坐标使得车辆轨迹的第一个点的朝 x 轴正向
-    # newTra, newBound = transfor(juncDir=juncDir, traDir=traDir, show=True)
-    # # 数据处理，生成fea ,lab 的npy文件
-    # # 单条数据处理
-    # fea, lab = getTrainData(tra=newTra, boundary=newBound)
-    # print(fea)
-    # print(lab)
+    # # # 变换坐标使得车辆轨迹的第一个点的朝 x 轴正向
+    # # newTra, newBound = transfor(juncDir=juncDir, traDir=traDir, show=True)
+    # # # 数据处理，生成fea ,lab 的npy文件
+    # # # 单条数据处理
+    # # fea, lab = getTrainData(tra=newTra, boundary=newBound)
+    # # print(fea)
+    # # print(lab)
     # #对所有数据处理
     fea, lab = batchProcess(dataDir=dataDir, juncDir=juncDir, index=index)
     print("fea shape: ", fea.shape, " lab shape: ", lab.shape)

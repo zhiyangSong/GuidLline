@@ -50,6 +50,21 @@ def plotMap(juncDir, traDir=None, segBegin=0, segEnd=0, tra_begin=0, tra_length=
     plt.show()
 
 
+def preProcess2(dataDir , limit , LCDirec):
+     """
+    dataDir: 路段数据根目录
+    limit: 路段范围 limit[0]: 下界. limit[1]: 上界. limit[2]: 坐标轴
+    LCDirec: lane change direction: 换道方向: left or right
+
+    先根据需要的车辆轨迹的第一个点进行旋转，再进行截取
+    1: 计算junction路段的边界并保存为 segment_<>.npy 数据
+    2: 计算截取后的道路边界信息 -> boundary.npy (N, 2)
+    3: 获取dataDir下所有截取范围后的轨迹 tra.npy
+    """
+    
+
+
+
 def preProcess(dataDir, limit, LCDirec):
     """
     dataDir: 路段数据根目录
@@ -364,12 +379,27 @@ def rot(tra, point, sin, cos,rotDirec):
     newTra = np.zeros_like(tra)
     x0, y0 = point[0], point[1]
     if rotDirec == 0:   # 顺时针
-        newTra[:, 0] = (tra[:, 0]-x0)*cos + (tra[:, 1]-y0)*sin
-        newTra[:, 1] = (tra[:, 1]-y0)*cos - (tra[:, 0]-x0)*sin
+        # print("顺时针旋转前的输入：{}".format(tra[:, 0]))
+        newTra[:, 0] = (tra[:, 0]-x0)*cos + (tra[:, 1]-y0)*sin+x0
+        newTra[:, 1] = (tra[:, 1]-y0)*cos - (tra[:, 0]-x0)*sin+y0
+        # print("顺时针旋转后：{}".format(newTra[:, 0]))
+        newTra[:, 0] -= x0
+        newTra[:, 1] -= y0
+        # print("顺时针旋转后：{}".format(newTra[:, 0]))
+        
+
+
     if rotDirec == 1:   # 逆时针
-        newTra[:, 0] = (tra[:, 0]-x0)*cos - (tra[:, 1]-y0)*sin
-        newTra[:, 1] = (tra[:, 0]-x0)*sin + (tra[:, 1]-y0)*cos
-   
+        
+
+        # print("逆时针旋转前的输入：{}".format(tra[:, 0]))
+        tra[:, 0] += x0
+        tra[:, 1] += y0
+        # print("逆时针旋转前的输入：{}".format(tra[:, 0]))
+
+        newTra[:, 0] += (tra[:, 0]-x0)*cos - (tra[:, 1]-y0)*sin+x0
+        newTra[:, 1] += (tra[:, 0]-x0)*sin + (tra[:, 1]-y0)*cos+y0
+        # print("逆时针旋转后：{}".format(newTra[:, 0]))
     
     return newTra
 
@@ -377,20 +407,25 @@ def rot(tra, point, sin, cos,rotDirec):
 
 
 
+
+
+
 def transfor(juncDir, traDir, show=False):
     """
-    变换坐标使得车道中心线第一个点的朝 x 轴正向
+    变换坐标使得本车轨迹的第一个点为0点，并使汽车的速度方向为x正向
     return: 变换后的轨迹tra和边界boundary
     """
-
-    begin_seg = np.loadtxt("{}/segment_0.csv".format(juncDir), delimiter=",", dtype="double")
-    centerLane = np.load("{}/centerLane.npy".format(juncDir))
-    point = [centerLane[0, 0], centerLane[0, 1]]
-    cos = begin_seg[0, 2]
-    sin = begin_seg[0, 3]
+   
+   
+   
 
     boundary = np.load("{}/boundary.npy".format(juncDir))
     tra = np.load("{}/tra.npy".format(traDir))
+    point =[ tra[0,0] ,tra[0,1]]
+    cos  = tra[0,2] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
+    sin = tra[0,3] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
+
+
     newTra = rot(tra, point=point, sin=sin, cos=cos , rotDirec= 0)
     newTra[:, 2:4] = tra[:, 2:4]
     newBound = rot(boundary, point=point, sin=sin, cos=cos , rotDirec= 0)
@@ -529,3 +564,25 @@ def getTrainData_old(juncDir, traDir, limit_1, limit_2):
 # juncDir = './data/junction'
 # fectures, labels = getTrainData3(juncDir = juncDir,traDir =tradir,limit_1=-200, limit_2=-100)
 # transfor(juncDir = juncDir  , traDir= tradir , show = True  )
+
+
+# tra = np.array([[-100 ,-1000,-1.31228e+01  ,8.47300e-02],
+#  [-101 ,-1002 ,-1.31221e+01 , 8.82264e-02],
+#  [-102, -1003, -1.31219e+01 , 9.05928e-02]])
+
+# point = [-100 ,-1000] 
+
+
+# cos  = tra[0,2] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
+# sin = tra[0,3] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
+
+
+# rotDirec =0
+
+# newtra = rot(tra =tra , point =point, sin  = sin , cos = cos,rotDirec = 0)
+# # print(newtra)
+# plt.plot(newtra[:,0] , newtra[:,1])
+
+# newtra = rot(tra =newtra , point =point, sin  = sin , cos = cos,rotDirec = 1)
+# # print(newtra)
+# plt.plot(newtra[:,0] , newtra[:,1])

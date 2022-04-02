@@ -44,7 +44,7 @@ def eval( juncDir, traDir, modelPath, cpNum, degree, distance):
 
     
 
-    loss_function = nn.MSELoss()
+    loss_function = nn.MSELoss(reduction = 'sum')
     loss = loss_function(pred, torch.FloatTensor(label).view(1, -1))
     print("loss is: ", loss)
 
@@ -54,42 +54,40 @@ def eval( juncDir, traDir, modelPath, cpNum, degree, distance):
     print("pred :{}".format(pred))
     print("label : {}".format(label))
     
-    bs = BS_curve(n=cpNum, p=degree)        # 初始化B样条
-   
-    
-
-
-
-    # 找到旋转依据的点和角度
-    centerLane = np.load("{}/centerLane.npy".format(juncDir))
-    point = [centerLane[0, 0], centerLane[0, 1]]
-    begin_seg = np.loadtxt("{}/segment_0.csv".format(juncDir), delimiter=",", dtype="double")
-    cos = begin_seg[0, 2]
-    sin = begin_seg[0, 3]
-    
+    # 从b样条控制点还原成曲线
+    bs = BS_curve(n=cpNum, p=degree)        # 初始化B样条 
     bs.get_knots()          # 计算b样条节点并设置
     x_asis = np.linspace(0, 1, 101)
     #设置控制点
     bs.cp = label        
     curves_label = bs.bs(x_asis)
-    
-    curves_label = rot(curves_label, point=point, sin=sin, cos=cos, rotDirec=1)   # 旋转
 
-    # curves_label[:, 0] += point[0]
-    # curves_label[:, 1] += point[1]
+
+
+
+     # 找到旋转依据的点和角度
+    tra = np.load("{}/tra.npy".format(traDir))
+    point =[ tra[0,0] ,tra[0,1]]
+    cos  = tra[0,2] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
+    sin = tra[0,3] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
+    # 将曲线旋转回去
+    curves_label = rot(curves_label, point=point, sin=sin, cos=cos, rotDirec=1)   # 旋转
+    
+   
+   
+
+
+
 
 
     bs.cp = pred        # 网络输出
     curves_pred = bs.bs(x_asis)
-
     curves_pred = rot(curves_pred, point=point, sin=sin, cos=cos, rotDirec=1)   # 旋转
-    # curves_pred[:, 0] += point[0]
-    # curves_pred[:, 1] += point[1]
+   
+
 
     plt.plot(curves_pred[:, 0], curves_pred[:, 1], color='r')
     plt.plot(curves_label[:, 0], curves_label[:, 1], color='b')
-    
-
     # 打印抽稀后的轨迹点
     tra = np.load("{}/tra.npy".format(traDir))
     tra = uniformization(tra, distance)     # 抽稀
@@ -123,13 +121,17 @@ LCDirec = 'left'
 
 
 
-modelPath = './model/2203_302055/episodes_1999.pth'
-tra = np.load("{}/tra.npy".format(traDir))
-boundary = np.load("{}/boundary.npy".format(juncDir))
-tra, boundary = transfor(juncDir=juncDir, traDir=traDir)
-fectures ,labels = getTrainData(tra=tra, boundary=boundary)
+modelPath = './model/2204_021116/episodes_1999.pth'
+
+
+newTra, newBound = transfor(juncDir=juncDir, traDir=traDir, show=False)
+fectures ,labels = getTrainData(tra=newTra, boundary=newBound)
 np.save("{}/features".format(traDir), fectures)
 np.save("{}/labels".format(traDir), labels)
+
+
+
+
 
 
 
