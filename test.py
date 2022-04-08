@@ -65,19 +65,20 @@ if __name__ == '__main__':
     print("fea shape: ", fea.shape, " lab shape: ", lab.shape)
 
    
-    dataDir = "./data2"
-    limit = limitConfig['data_2']
-    LCDirec = 'left'        # 左边换道
-    juncDir = "./data/junction"
-    traDir = "./data/bag_20220110_2"
-    index = 2
+    # dataDir = "./data2"
+    # limit = limitConfig['data_2']
+    # LCDirec = 'left'        # 左边换道
+    # juncDir = "./data/junction"
+    # traDir = "./data/bag_20220110_2"
+    # index = 2
 
-    preProcess(dataDir=dataDir, limit=limit, LCDirec=LCDirec)
-    print("预处理完成，道路边界信息存在junction的boundary.npy,轨迹信息存在每个包的tra.npy")
-    fea, lab = batchProcess(dataDir=dataDir, juncDir=juncDir, index=index)
-    print("fea shape: ", fea.shape, " lab shape: ", lab.shape)
+    # preProcess(dataDir=dataDir, limit=limit, LCDirec=LCDirec)
+    # print("预处理完成，道路边界信息存在junction的boundary.npy,轨迹信息存在每个包的tra.npy")
+    # fea, lab = batchProcess(dataDir=dataDir, juncDir=juncDir, index=index)
+    # print("fea shape: ", fea.shape, " lab shape: ", lab.shape)
 
     
+  
 
     dataDir = "./data3"
     limit = limitConfig['data_3']

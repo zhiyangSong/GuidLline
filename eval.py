@@ -113,10 +113,10 @@ juncDir = './data/junction'
 LCDirec = 'left'
 
 
-# limit = limitConfig["data_3"]
-# traDir="./data3/bag_20220110_3"
-# juncDir = './data3/junction'
-# LCDirec = 'left'
+limit = limitConfig["data_3"]
+traDir="./data3/bag_20220110_3"
+juncDir = './data3/junction'
+LCDirec = 'left'
 
 
 
@@ -130,22 +130,24 @@ np.save("{}/features".format(traDir), fectures)
 np.save("{}/labels".format(traDir), labels)
 
 
+eval(  modelPath=modelPath,juncDir=juncDir, traDir=traDir,cpNum=8, degree=3, distance=5)
+
+
+modelPath = './model/2204_081458/episodes_1999.pth'
+newTra, newBound = transfor(juncDir=juncDir, traDir=traDir, show=False)
+fectures ,labels = getTrainData(tra=newTra, boundary=newBound)
+np.save("{}/features".format(traDir), fectures)
+np.save("{}/labels".format(traDir), labels)
+eval(  modelPath=modelPath,juncDir=juncDir, traDir=traDir,cpNum=8, degree=3, distance=5)
 
 
 
-
-
-
-eval(
-    
-    modelPath=modelPath,
-    juncDir=juncDir, 
-    traDir=traDir,
-    cpNum=8, degree=3, distance=5
-)
-
-
-
+modelPath = './model/2204_081827/episodes_1999.pth'
+newTra, newBound = transfor(juncDir=juncDir, traDir=traDir, show=False)
+fectures ,labels = getTrainData(tra=newTra, boundary=newBound)
+np.save("{}/features".format(traDir), fectures)
+np.save("{}/labels".format(traDir), labels)
+eval(  modelPath=modelPath,juncDir=juncDir, traDir=traDir,cpNum=8, degree=3, distance=5)
 
 
 
