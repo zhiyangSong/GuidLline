@@ -62,6 +62,7 @@ def eval( juncDir, traDir, modelPath, cpNum, degree, distance):
     bs.cp = label        
     curves_label = bs.bs(x_asis)
 
+    curves_label[:,0] = curves_label[:,0]*10
 
 
 
@@ -82,19 +83,20 @@ def eval( juncDir, traDir, modelPath, cpNum, degree, distance):
 
     bs.cp = pred        # 网络输出
     curves_pred = bs.bs(x_asis)
+    curves_pred[:,0] = curves_pred[:,0]*10
     curves_pred = rot(curves_pred, point=point, sin=sin, cos=cos, rotDirec=1)   # 旋转
-   
+    
 
 
     plt.plot(curves_pred[:, 0], curves_pred[:, 1], color='r')
     plt.plot(curves_label[:, 0], curves_label[:, 1], color='b')
     # 打印抽稀后的轨迹点
-    tra = np.load("{}/tra.npy".format(traDir))
-    tra = uniformization(tra, distance)     # 抽稀
-    plt.scatter(tra[:, 0], tra[:, 1])
+    # tra = np.load("{}/tra.npy".format(traDir))
+    # tra = uniformization(tra, distance)     # 抽稀
+    # plt.scatter(tra[:, 0], tra[:, 1])
 
 
-    plotMap(juncDir=juncDir)    # 打印路段信息
+    plotMap(juncDir=juncDir ,traDir =traDir)    # 打印路段信息
     plt.show()
 
 
@@ -105,49 +107,37 @@ def eval( juncDir, traDir, modelPath, cpNum, degree, distance):
 limitConfig = {
     "data_1": [-200, -100, 0],      # x 轴坐标
     "data_2": [-3910, -3810, 1] ,    # y 轴坐标
-    "data_3": [-850, -700, 0]     # x 轴坐标
+    "data_3": [-826, -726, 0]     # x 轴坐标
 }
-limit = limitConfig["data_1"]
-traDir="./data/bag_20220111_4"
-juncDir = './data/junction'
+limit = limitConfig["data_0"]
+traDir="./data0/bag_20220110_3"
+juncDir = './data0/junction'
 LCDirec = 'left'
 
 
-limit = limitConfig["data_3"]
-traDir="./data3/bag_20220110_3"
-juncDir = './data3/junction'
-LCDirec = 'left'
+# limit = limitConfig["data_6"]
+# traDir="./data6/bag_20220304_1"
+# juncDir = './data6/junction'
+# LCDirec = 'left'
 
 
 
 
-modelPath = './model/2204_021116/episodes_1999.pth'
+modelPath = './model/2204_111718/episodes_1999.pth'
 
 
 newTra, newBound = transfor(juncDir=juncDir, traDir=traDir, show=False)
+newTra[0,:]  = newTra[0,:] /10
+newBound[0 , :]  = newBound[0 , :]/10
 fectures ,labels = getTrainData(tra=newTra, boundary=newBound)
 np.save("{}/features".format(traDir), fectures)
 np.save("{}/labels".format(traDir), labels)
 
 
-eval(  modelPath=modelPath,juncDir=juncDir, traDir=traDir,cpNum=8, degree=3, distance=5)
-
-
-modelPath = './model/2204_081458/episodes_1999.pth'
-newTra, newBound = transfor(juncDir=juncDir, traDir=traDir, show=False)
-fectures ,labels = getTrainData(tra=newTra, boundary=newBound)
-np.save("{}/features".format(traDir), fectures)
-np.save("{}/labels".format(traDir), labels)
-eval(  modelPath=modelPath,juncDir=juncDir, traDir=traDir,cpNum=8, degree=3, distance=5)
+eval(modelPath=modelPath,juncDir=juncDir, traDir=traDir,cpNum=8, degree=3, distance=5)
 
 
 
-modelPath = './model/2204_081827/episodes_1999.pth'
-newTra, newBound = transfor(juncDir=juncDir, traDir=traDir, show=False)
-fectures ,labels = getTrainData(tra=newTra, boundary=newBound)
-np.save("{}/features".format(traDir), fectures)
-np.save("{}/labels".format(traDir), labels)
-eval(  modelPath=modelPath,juncDir=juncDir, traDir=traDir,cpNum=8, degree=3, distance=5)
 
 
 

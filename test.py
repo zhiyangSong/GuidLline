@@ -30,21 +30,21 @@ def fun():
 
 
 limitConfig = {
-    "data_1": [-200, -100, 0],      # x 轴坐标
+    "data_0": [-200, -100, 0],      # x 轴坐标
     "data_2": [-3910, -3810, 1] ,    # y 轴坐标
-    "data_3": [-850, -700, 0]     # x 轴坐标
+    "data_6": [-826, -726, 0]     # x 轴坐标
 }
 
 
 
 if __name__ == '__main__':
   
-    dataDir = "./data"
-    limit = limitConfig['data_1']
+    dataDir = "./data0"
+    limit = limitConfig['data_0']
     LCDirec = 'left'        # 左边换道
-    juncDir = "./data/junction"
-    traDir = "./data/bag_20220110_2"
-    index = 1
+    juncDir = "./data0/junction"
+    traDir = "./data0/bag_20220110_2"
+    index = 0
 
  
      # 数据预处理
@@ -80,12 +80,12 @@ if __name__ == '__main__':
     
   
 
-    dataDir = "./data3"
-    limit = limitConfig['data_3']
+    dataDir = "./data6"
+    limit = limitConfig['data_6']
     LCDirec = 'left'        # 左边换道
-    juncDir = "./data3/junction"
-    traDir = "./data3/bag_20220121_1"
-    index = 3
+    juncDir = "./data6/junction"
+    traDir = "./data6/bag_20220121_1"
+    index = 6
 
 
     # # 打印轨迹，相对坐标，即简单的将轨迹和道路边界线规整到以轨迹起点为（0，0）
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     fea, lab = batchProcess(dataDir=dataDir, juncDir=juncDir, index=index)
     print("fea shape: ", fea.shape, " lab shape: ", lab.shape)
 
-    # # 将bag_input中多个路段数据合并
+    # # 将_input中多个路段数据合并
     fun()
 
   

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import glob
-from process_data.uniformization import uniformization, reducePoint
+from process_data.uniformization import uniformization, reducePoint , Reduce
 from process_data.B_Spline_Approximation import BS_curve
 import math
 
@@ -37,10 +37,10 @@ def plotMap(juncDir, traDir=None, segBegin=0, segEnd=0, tra_begin=0, tra_length=
             tra = np.load("{}/tra.npy".format(traDir))
             # tra = np.loadtxt("{}/tra.csv".format(traDir), delimiter=",", dtype="double")
             if tra_length == 0:
-                plt.plot(tra[tra_begin:, 0], tra[tra_begin:, 1], color='r')   # 轨迹
+                plt.plot(tra[tra_begin:, 0], tra[tra_begin:, 1], color='k')   # 轨迹
             else:
                 tra_end = tra_begin + tra_length
-                plt.plot(tra[tra_begin:tra_end, 0], tra[tra_begin:tra_end, 1], color='r')
+                plt.plot(tra[tra_begin:tra_end, 0], tra[tra_begin:tra_end, 1], color='k')
 
         plt.plot(xpoint, ypoint, color='g', linestyle='--')   # 中心线
         plt.plot(l_b_x, l_b_y, color='y')
@@ -50,17 +50,7 @@ def plotMap(juncDir, traDir=None, segBegin=0, segEnd=0, tra_begin=0, tra_length=
     plt.show()
 
 
-def preProcess2(dataDir , limit , LCDirec):
-     """
-    dataDir: 路段数据根目录
-    limit: 路段范围 limit[0]: 下界. limit[1]: 上界. limit[2]: 坐标轴
-    LCDirec: lane change direction: 换道方向: left or right
 
-    先根据需要的车辆轨迹的第一个点进行旋转，再进行截取
-    1: 计算junction路段的边界并保存为 segment_<>.npy 数据
-    2: 计算截取后的道路边界信息 -> boundary.npy (N, 2)
-    3: 获取dataDir下所有截取范围后的轨迹 tra.npy
-    """
     
 
 
@@ -161,6 +151,37 @@ def calcuBoundary(laneInfo):
     # laneInfo shape: (dataLength, 6) (中心线、左边界，右边界)
     return np.vstack([xpoint, ypoint, l_b_x, l_b_y, r_b_x, r_b_y]).T
 
+def bsplineFittingnew(tra, cpNum, degree, pointNum=20, show=False):
+    """
+    使用B样条拟合轨迹点
+    cpNum: 控制点个数
+    degree: 阶数
+    distance: 轨迹点抽取距离
+    return: 控制点
+    """
+    # 获取左边界线拟合参数并简化轨迹点
+    re = Reduce(pointNum=pointNum)
+
+
+    traPoint = re.getReducePoint(tra=tra)
+    traPoint[:,0]  = traPoint[:,0] /10.
+       
+    assert traPoint.shape[0] == pointNum, \
+        "抽稀后的数据点个数要等于 pointNum"
+    bs = BS_curve(cpNum, degree)
+    paras = bs.estimate_parameters(traPoint)
+    knots = bs.get_knots()
+    if bs.check():
+        cp = bs.approximation(traPoint)
+    x_ticks = np.linspace(0,1,101)
+    curves = bs.bs(x_ticks)
+    if show:
+        plt.scatter(traPoint[:, 0], traPoint[:, 1])
+        plt.plot(curves[:, 0], curves[:, 1], color='r')
+        plt.plot(cp[:, 0], cp[:, 1], color='y')
+        plt.scatter(cp[:, 0], cp[:, 1], color='y')
+        plt.show()
+    return cp
 
 def bsplineFitting(tra, cpNum, degree, distance, show=False):
     """
@@ -231,12 +252,16 @@ def getTrainData(tra, boundary):
     # end_x = tra[-1, 0]      # 轨迹结束相对坐标
     # end_y = tra[-1, 1]
     start_speed = math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
-    traCP = bsplineFitting(tra=tra[:, 0:2], cpNum=8, degree=3, distance=5, show=False)
+
+    traCP = bsplineFittingnew(tra=tra[:, 0:2], cpNum=8, degree=3, show=False)
+    # traCP = bsplineFitting(tra=tra[:, 0:2], cpNum=8, degree=3, distance=5, show=False)
     # boundary[:, 0] -= temp_x
     # boundary[:, 1] -= temp_y
 
     # 拟合道路边界
-    boundaryCP = bsplineFitting(boundary, cpNum=8, degree=3, distance=5, show=False)
+    boundaryCP = bsplineFittingnew(boundary, cpNum=8, degree=3, show=False)
+    
+    # boundaryCP = bsplineFitting(boundary, cpNum=8, degree=3, distance=5, show=False)s
     boundaryCP = np.array(boundaryCP).reshape(1, -1)
 
     # fectures = np.array([0, 0, start_speed, end_x, end_y]).reshape(1, -1)
@@ -257,10 +282,14 @@ def batchProcess(dataDir, juncDir, index):
     fea = []
     lab = []
     fileDirs = glob.glob(pathname = '{}/bag_2022*_*'.format(dataDir))
-    boundary = np.load("{}/boundary.npy".format(juncDir))
+    # boundary = np.load("{}/boundary.npy".format(juncDir))
+    # boundary  = np.load("{}/centerLane.npy".format(juncDir))
     for file in fileDirs:
         # tra = np.load("{}/tra.npy".format(file))
         tra, boundary = transfor(juncDir=juncDir, traDir=file)
+        
+        
+        
         features, labels = getTrainData(tra=tra, boundary=boundary)
         fea.append(features)
         lab.append(labels)
@@ -388,15 +417,11 @@ def rot(tra, point, sin, cos,rotDirec):
         # print("顺时针旋转后：{}".format(newTra[:, 0]))
         
 
-
     if rotDirec == 1:   # 逆时针
-        
-
         # print("逆时针旋转前的输入：{}".format(tra[:, 0]))
         tra[:, 0] += x0
         tra[:, 1] += y0
         # print("逆时针旋转前的输入：{}".format(tra[:, 0]))
-
         newTra[:, 0] += (tra[:, 0]-x0)*cos - (tra[:, 1]-y0)*sin+x0
         newTra[:, 1] += (tra[:, 0]-x0)*sin + (tra[:, 1]-y0)*cos+y0
         # print("逆时针旋转后：{}".format(newTra[:, 0]))
@@ -419,7 +444,8 @@ def transfor(juncDir, traDir, show=False):
    
    
 
-    boundary = np.load("{}/boundary.npy".format(juncDir))
+    # boundary = np.load("{}/boundary.npy".format(juncDir))
+    boundary = np.load("{}/centerLane.npy".format(juncDir))
     tra = np.load("{}/tra.npy".format(traDir))
     point =[ tra[0,0] ,tra[0,1]]
     cos  = tra[0,2] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
@@ -453,97 +479,7 @@ def transfor(juncDir, traDir, show=False):
 
 
 
-def getTrainData_old(juncDir, traDir, limit_1, limit_2):
-    """
-    数据处理流程
-    增加了规整方向
-    增加了fectures 中对路口的标识{0,1}
-    删除了labels 的第一个控制点（0，0）
-    traDir: 车辆轨迹路径
-    juncDir: 道路节点轨迹
-    limit_1: 下界
-    limit_2: 上界
-    """
 
-    
-    # 获取监督数据（轨迹的B样条控制点）
-    tra = np.loadtxt("{}/tra.csv".format(traDir), delimiter=",", dtype="double")
-    tra = tra[(limit_1 < tra[:, 0]) & (tra[:, 0] < limit_2) , :]
-    temp_x = tra[0, 0]     # 记录轨迹起始点坐标(全局坐标)
-    temp_y = tra[0, 1]
-    tra[:, 0] -= tra[0, 0]
-    tra[:, 1] -= tra[0, 1]
-    end_x = tra[-1, 0]      # 轨迹结束相对坐标，(以轨迹初始点(0,0)为起始点)
-    end_y = tra[-1, 1]
-
-    # 如果是第一个路口， 需要规整方向
-    # 将轨迹的方向规整为同一方向
-    if(traDir.split("/b")[0]  == "./data") :
-        tra[:, 0] =  -tra[:, 0]
-        tra[:, 1] = -tra[:, 1]
-        
-
-    start_speed = math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
-    np.save("{}/tra".format(traDir), tra)
-    traCP = bsplineFitting(tra[:, 0:2], cpNum=8, degree=3, distance=5, show=False)
-    # print("轨迹拟合控制点： ", traCP)
-
-
-
-
-
-    # 拼接第一段和第三段数据
-    seg_1 = np.loadtxt("{}/segment_0.csv".format(juncDir), delimiter=",", dtype="double")
-    seg_2 = np.loadtxt("{}/segment_2.csv".format(juncDir), delimiter=",", dtype="double")
-    laneInfo = np.vstack([seg_1, seg_2])
-    # 截取了路段信息（-200， -100）
-    laneInfo = laneInfo[(limit_1 < laneInfo[:, 0]) & (laneInfo[:, 0] < limit_2) , :]
-    laneInfo[:, 0] -= temp_x
-    laneInfo[:, 1] -= temp_y
-
-    # 如果是第一个路口， 需要规整方向
-    # 将轨迹的方向规整为同一方向
-    if(traDir.split("/b")[0]  == "./data") :
-        laneInfo[:, 0] =  -laneInfo[:, 0]
-        laneInfo[:, 1] = -laneInfo[:, 1]
-        laneInfo[:, 2] = -laneInfo[:, 2]
-        laneInfo[:, 3] = -laneInfo[:, 3]
-
-
-
-    np.save("{}/laneInfo".format(traDir), laneInfo)
-    # 根据中心线与左右边界距离计算道路左右边界点
-    laneInfo = calcuBoundary(laneInfo)
-    # 拟合道路左边界
-    boundaryCP = bsplineFitting(laneInfo[:, 2:4], cpNum=8, degree=3, distance=5, show=False)
-    boundaryCP = np.array(boundaryCP).reshape(1, -1)
-
-    fectures = np.array([0, 0, start_speed, end_x, end_y]).reshape(1, -1)
-    fectures = np.hstack([fectures, boundaryCP])
-   
-    if(traDir.split("/b")[0]  == "./data"):
-
-        fectures = np.hstack([fectures, np.array([0]).reshape(1, 1)])
-
-    if(traDir.split("/b")[0]  == "./data3"):
-        fectures = np.hstack([fectures, np.array([1]).reshape(1, 1)])
-
-    print(fectures.shape)
-    # if(traDir.split("/b")[0]  == "./data"):
-    #     labels = np.array(traCP).reshape(1, -1)
-    #     labels = np.hstack([labels, np.array([0]).reshape(1, 1)])
-
-
-    # if(traDir.split("/b")[0]  == "./data3"):
-    #     labels = np.array(traCP).reshape(1, -1)
-    #     labels = np.hstack([labels, np.array([1]).reshape(1, 1)])
-    labels = np.array(traCP).reshape(1, -1)
-    labels = np.delete(labels, [0,1], axis=1)
-
-    
-
-    print(labels.shape)
-    return fectures, labels
 
 
 
