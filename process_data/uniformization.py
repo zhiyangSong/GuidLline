@@ -43,11 +43,11 @@ class Reduce(object):
                 saveList.append(tra[j, :])
                 i = j
         saveList = np.array(saveList)
-      
         if show:
             plt.scatter(saveList[:, 0], saveList[:, 1])
             plt.show()
         return saveList
+
 def uniformization(tra, len, show=False):
     """
     把密度不均匀的轨迹点均匀化（两点之间距离相近）

@@ -1,24 +1,21 @@
-import imp
 import numpy as np
 
 from BCModel.arguments import get_common_args
 from BCModel.net import BCNet
 
 import torch
-import torch.nn as nn
 
 from matplotlib import pyplot as plt 
 
 from process_data.B_Spline_Approximation import  BS_curve
-from process_data.uniformization import uniformization
 from process import *
+from test import config
 
 
 args = get_common_args()
 
 
-
-def eval( juncDir, traDir, modelPath, cpNum, degree, distance):
+def eval(feature, label, juncDir, traDir, modelPath, cpNum, degree):
     """
     查看模型预测效果
     juncDir: 车道轨迹路径
@@ -27,117 +24,95 @@ def eval( juncDir, traDir, modelPath, cpNum, degree, distance):
     distance: 抽稀距离
     """
     # 加载模型
-   
     model = BCNet(args.input_size, args.output_size, args)
     model.load_state_dict(torch.load(modelPath))
     print('load network successed')
     model.eval()
 
-    
-
-    # 加载模型的输入和标签
-    feacture = np.load("{}/features.npy".format(traDir))
-    label = np.load("{}/labels.npy".format(traDir))
-    feacture = torch.FloatTensor(feacture).view(1, -1)
-    # 预测出的控制点
-    pred = model(feacture)
-
-    
-
-    loss_function = nn.MSELoss(reduction = 'sum')
-    loss = loss_function(pred, torch.FloatTensor(label).view(1, -1))
-    print("loss is: ", loss)
+    feature = torch.FloatTensor(feature).view(1, -1)
+    pred = model(feature)
 
     # 将label  和pred  都转为numpy
     label = label.reshape(-1, 2)
     pred = pred.view(-1, 2).detach().numpy()
     print("pred :{}".format(pred))
     print("label : {}".format(label))
+    loss = np.sum(pred-label)**2
+    print("loss is: ", loss)
+
+    centerLane = np.load("{}/centerLane.npy".format(juncDir))
+    cos = centerLane[0, 2]
+    sin = centerLane[0, 3]
     
-    # 从b样条控制点还原成曲线
-    bs = BS_curve(n=cpNum, p=degree)        # 初始化B样条 
-    bs.get_knots()          # 计算b样条节点并设置
+    bs = BS_curve(n=cpNum, p=degree)        # 初始化B样条
+    bs.get_knots()                          # 计算b样条节点并设置
+
+    # firstCP = np.array(label[0, :])
+    # pred = np.vstack([firstCP, pred])
+    pred[0, :] = label[0, :]
+
     x_asis = np.linspace(0, 1, 101)
     #设置控制点
-    bs.cp = label        
+    bs.cp = label       # 标签(控制点)
     curves_label = bs.bs(x_asis)
-
-    curves_label[:,0] = curves_label[:,0]*10
-
-
-
-     # 找到旋转依据的点和角度
-    tra = np.load("{}/tra.npy".format(traDir))
-    point =[ tra[0,0] ,tra[0,1]]
-    cos  = tra[0,2] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
-    sin = tra[0,3] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
-    # 将曲线旋转回去
-    curves_label = rot(curves_label, point=point, sin=sin, cos=cos, rotDirec=1)   # 旋转
-    
-   
-   
-
-
-
-
-
     bs.cp = pred        # 网络输出
     curves_pred = bs.bs(x_asis)
-    curves_pred[:,0] = curves_pred[:,0]*10
-    curves_pred = rot(curves_pred, point=point, sin=sin, cos=cos, rotDirec=1)   # 旋转
+
+    rot_label = rot(tra=curves_label, point=[0, 0], sin=sin, cos=cos, rotDirec=0)
+    rot_pred = rot(tra=curves_pred, point=[0, 0], sin=sin, cos=cos, rotDirec=0)
+    rot_label_cp = rot(tra=label, point=[0, 0], sin=sin, cos=cos, rotDirec=0)
+    rot_pred_cp = rot(tra=pred, point=[0, 0], sin=sin, cos=cos, rotDirec=0)
+    rot_label[:, 0] *= 10
+    rot_pred[:, 0] *= 10
+    rot_label_cp[:, 0] *= 10
+    rot_pred_cp[:, 0] *= 10
+    curves_label = rot(tra=rot_label, point=[0, 0], sin=sin, cos=cos, rotDirec=1)
+    curves_pred = rot(tra=rot_pred, point=[0, 0], sin=sin, cos=cos, rotDirec=1)
+    label_cp = rot(tra=rot_label_cp, point=[0, 0], sin=sin, cos=cos, rotDirec=1)
+    pred_cp = rot(tra=rot_pred_cp, point=[0, 0], sin=sin, cos=cos, rotDirec=1)
     
+    curves_label[:, 0] += centerLane[0, 0]
+    curves_label[:, 1] += centerLane[0, 1]
+    curves_pred[:, 0] += centerLane[0, 0]
+    curves_pred[:, 1] += centerLane[0, 1]
 
+    label_cp[:, 0] += centerLane[0, 0]
+    label_cp[:, 1] += centerLane[0, 1]
+    pred_cp[:, 0] += centerLane[0, 0]
+    pred_cp[:, 1] += centerLane[0, 1]
 
-    plt.plot(curves_pred[:, 0], curves_pred[:, 1], color='r')
     plt.plot(curves_label[:, 0], curves_label[:, 1], color='b')
-    # 打印抽稀后的轨迹点
-    # tra = np.load("{}/tra.npy".format(traDir))
-    # tra = uniformization(tra, distance)     # 抽稀
-    # plt.scatter(tra[:, 0], tra[:, 1])
-
-
-    plotMap(juncDir=juncDir ,traDir =traDir)    # 打印路段信息
+    plt.plot(curves_pred[:, 0], curves_pred[:, 1], color='r')
+    plt.scatter(label_cp[:, 0], label_cp[:, 1], color='b')
+    plt.scatter(pred_cp[:, 0], pred_cp[:, 1], color='r')
+    
+    plotMap(juncDir=juncDir)    # 打印路段信息
     plt.show()
 
 
+def evalModel(modelPath):
+    data_dirs=glob.glob(pathname='./data/*data*')
+    print(data_dirs)
+    for dir in ['./data/data_2', './data/data_6', './data/data_0']:
+    # data_dirs=glob.glob(pathname='./data/*data*')
+    # for dir in data_dirs:
+        sub_data = dir.split('/')[2]
+        bagName = config[sub_data]['testBag']
+        juncDir = '{}/junction'.format(dir)
+        traDir = '{}/{}'.format(dir, bagName)
 
+        fea = np.load("{}/feature.npy".format(traDir))
+        lab = np.load("{}/label.npy".format(traDir))
+        eval(
+            feature=fea,
+            label=lab,
+            modelPath=modelPath,
+            juncDir=juncDir, 
+            traDir=traDir,
+            cpNum=8, degree=3
+        )
 
-
-
-limitConfig = {
-    "data_1": [-200, -100, 0],      # x 轴坐标
-    "data_2": [-3910, -3810, 1] ,    # y 轴坐标
-    "data_3": [-826, -726, 0]     # x 轴坐标
-}
-limit = limitConfig["data_0"]
-traDir="./data0/bag_20220110_3"
-juncDir = './data0/junction'
-LCDirec = 'left'
-
-
-# limit = limitConfig["data_6"]
-# traDir="./data6/bag_20220304_1"
-# juncDir = './data6/junction'
-# LCDirec = 'left'
-
-
-
-
-modelPath = './model/2204_111718/episodes_1999.pth'
-
-
-newTra, newBound = transfor(juncDir=juncDir, traDir=traDir, show=False)
-newTra[0,:]  = newTra[0,:] /10
-newBound[0 , :]  = newBound[0 , :]/10
-fectures ,labels = getTrainData(tra=newTra, boundary=newBound)
-np.save("{}/features".format(traDir), fectures)
-np.save("{}/labels".format(traDir), labels)
-
-
-eval(modelPath=modelPath,juncDir=juncDir, traDir=traDir,cpNum=8, degree=3, distance=5)
-
-
-
-
-
-
+if __name__ == '__main__':
+    # 2204_091800 --> 缩放版本
+    modelPath = './model/2204_111658/episodes_1999.pth'
+    evalModel(modelPath=modelPath)

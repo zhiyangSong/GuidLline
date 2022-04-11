@@ -1,9 +1,8 @@
-from turtle import color
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import glob
-from process_data.uniformization import uniformization, reducePoint , Reduce
+from process_data.uniformization import uniformization, Reduce
 from process_data.B_Spline_Approximation import BS_curve
 import math
 
@@ -37,10 +36,10 @@ def plotMap(juncDir, traDir=None, segBegin=0, segEnd=0, tra_begin=0, tra_length=
             tra = np.load("{}/tra.npy".format(traDir))
             # tra = np.loadtxt("{}/tra.csv".format(traDir), delimiter=",", dtype="double")
             if tra_length == 0:
-                plt.plot(tra[tra_begin:, 0], tra[tra_begin:, 1], color='k')   # 轨迹
+                plt.plot(tra[tra_begin:, 0], tra[tra_begin:, 1], color='r')   # 轨迹
             else:
                 tra_end = tra_begin + tra_length
-                plt.plot(tra[tra_begin:tra_end, 0], tra[tra_begin:tra_end, 1], color='k')
+                plt.plot(tra[tra_begin:tra_end, 0], tra[tra_begin:tra_end, 1], color='r')
 
         plt.plot(xpoint, ypoint, color='g', linestyle='--')   # 中心线
         plt.plot(l_b_x, l_b_y, color='y')
@@ -48,11 +47,6 @@ def plotMap(juncDir, traDir=None, segBegin=0, segEnd=0, tra_begin=0, tra_length=
     # boundary = np.load("{}/boundary.npy".format(juncDir))
     # plt.plot(boundary[:, 0], boundary[:, 1], color='r')
     plt.show()
-
-
-
-    
-
 
 
 def preProcess(dataDir, limit, LCDirec):
@@ -68,32 +62,30 @@ def preProcess(dataDir, limit, LCDirec):
     # 1: 计算junction路段的边界并保存为 segment_<>.npy 数据
     fileDirs = glob.glob(pathname='{}/segment*.csv'.format(juncDir))
     for index in range(len(fileDirs)):
-        lineDir = "{}/segment_{}.csv".format(juncDir, index)
-        segment = np.loadtxt(lineDir, delimiter=",", dtype="double")
+        segDir = "{}/segment_{}.csv".format(juncDir, index)
+        segment = np.loadtxt(segDir, delimiter=",", dtype="double")
         segment = calcuBoundary(segment)
         np.save("{}/segment_{}".format(juncDir, index), segment)
+    # 保存第一个路段的中心线以及航角信息
+    seg_0 = np.loadtxt("{}/segment_0.csv".format(juncDir), delimiter=",", dtype="double")
+    centerLane = seg_0[(limit[0] < seg_0[:, limit[2]]) & (seg_0[:, limit[2]] < limit[1]), :4]
+    np.save("{}/centerLane.npy".format(juncDir), centerLane)
 
     # 2: 计算截取后的道路边界信息 -> boundary.npy
-    seg_1 = np.load("{}/segment_0.npy".format(juncDir))
+    seg_0 = np.load("{}/segment_0.npy".format(juncDir))
     seg_2 = np.load("{}/segment_2.npy".format(juncDir))
-    boundary = np.vstack([seg_1, seg_2])
+    boundary = np.vstack([seg_0, seg_2])
     boundary = boundary[(limit[0] < boundary[:, limit[2]]) & (boundary[:, limit[2]] < limit[1]), :]
-    np.save("{}/centerLane.npy".format(juncDir), boundary[:, :2])
     if LCDirec == 'left':   # 左边界
         np.save("{}/boundary.npy".format(juncDir), boundary[:, 2:4])
     else: np.save("{}/boundary.npy".format(juncDir), boundary[:, 4:6])
-
-
 
     # 3: 获取dataDir下所有截取范围后的轨迹 tra.npy
     traFileDirs = glob.glob(pathname='{}/bag_2022*_*'.format(dataDir))
     for traFile in traFileDirs:
         tra = np.loadtxt("{}/tra.csv".format(traFile), delimiter=",", dtype="double")
-
         tra = tra[(limit[0] < tra[:, limit[2]]) & (tra[:, limit[2]] < limit[1]), :]
         np.save("{}/tra.npy".format(traFile), tra)
-
-    
         
 
 def pltTra(juncDir, dataDir=None, traDir=None):
@@ -102,7 +94,8 @@ def pltTra(juncDir, dataDir=None, traDir=None):
     traDir!=None: 打印一条轨迹（相对坐标）
     """
     if traDir:  # 打印一条轨迹
-        tra = np.loadtxt("{}/tra.csv".format(traDir), delimiter=",", dtype="double")
+        # tra = np.loadtxt("{}/tra.csv".format(traDir), delimiter=",", dtype="double")
+        tra = np.load("{}/tra.npy".format(traDir))
         start_x = tra[0, 0]
         start_y = tra[0, 1]
         tra[:, 0] -= start_x
@@ -111,7 +104,8 @@ def pltTra(juncDir, dataDir=None, traDir=None):
     else:       # 打印 dataDir 下所有轨迹
         fileDirs = glob.glob(pathname = '{}/bag_2022*_*'.format(dataDir))
         for file in fileDirs:
-            tra = np.loadtxt("{}/tra.csv".format(file), delimiter=",", dtype="double")
+            # tra = np.loadtxt("{}/tra.csv".format(file), delimiter=",", dtype="double")
+            tra = np.load("{}/tra.npy".format(file))
             plt.plot(tra[:, 0], tra[:, 1], color='r')
     
     fileDirs = glob.glob(pathname = '{}/segment*.npy'.format(juncDir))
@@ -127,7 +121,7 @@ def pltTra(juncDir, dataDir=None, traDir=None):
         boundary = np.load("{}/boundary.npy".format(juncDir))
         boundary[:, 0] -= start_x
         boundary[:, 1] -= start_y
-        # plt.plot(boundary[:, 0], boundary[:, 1], color='r')
+        plt.plot(boundary[:, 0], boundary[:, 1], color='r')
     plt.show()
 
 
@@ -151,7 +145,8 @@ def calcuBoundary(laneInfo):
     # laneInfo shape: (dataLength, 6) (中心线、左边界，右边界)
     return np.vstack([xpoint, ypoint, l_b_x, l_b_y, r_b_x, r_b_y]).T
 
-def bsplineFittingnew(tra, cpNum, degree, pointNum=20, show=False):
+
+def bsplineFitting(tra, cpNum, degree, show=False):
     """
     使用B样条拟合轨迹点
     cpNum: 控制点个数
@@ -159,50 +154,15 @@ def bsplineFittingnew(tra, cpNum, degree, pointNum=20, show=False):
     distance: 轨迹点抽取距离
     return: 控制点
     """
-    # 获取左边界线拟合参数并简化轨迹点
-    re = Reduce(pointNum=pointNum)
-
-
-    traPoint = re.getReducePoint(tra=tra)
-    traPoint[:,0]  = traPoint[:,0] /10.
-       
-    assert traPoint.shape[0] == pointNum, \
-        "抽稀后的数据点个数要等于 pointNum"
     bs = BS_curve(cpNum, degree)
-    paras = bs.estimate_parameters(traPoint)
+    paras = bs.estimate_parameters(tra)
     knots = bs.get_knots()
     if bs.check():
-        cp = bs.approximation(traPoint)
+        cp = bs.approximation(tra)
     x_ticks = np.linspace(0,1,101)
     curves = bs.bs(x_ticks)
     if show:
-        plt.scatter(traPoint[:, 0], traPoint[:, 1])
-        plt.plot(curves[:, 0], curves[:, 1], color='r')
-        plt.plot(cp[:, 0], cp[:, 1], color='y')
-        plt.scatter(cp[:, 0], cp[:, 1], color='y')
-        plt.show()
-    return cp
-
-def bsplineFitting(tra, cpNum, degree, distance, show=False):
-    """
-    使用B样条拟合轨迹点
-    cpNum: 控制点个数
-    degree: 阶数
-    distance: 轨迹点抽取距离
-    return: 控制点
-    """
-    # 获取左边界线拟合参数并简化轨迹点
-    traPoint = uniformization(tra, distance)
-
-    bs = BS_curve(cpNum, degree)
-    paras = bs.estimate_parameters(traPoint)
-    knots = bs.get_knots()
-    if bs.check():
-        cp = bs.approximation(traPoint)
-    x_ticks = np.linspace(0,1,101)
-    curves = bs.bs(x_ticks)
-    if show:
-        plt.scatter(traPoint[:, 0], traPoint[:, 1])
+        plt.scatter(tra[:, 0], tra[:, 1])
         plt.plot(curves[:, 0], curves[:, 1], color='r')
         plt.plot(cp[:, 0], cp[:, 1], color='y')
         plt.scatter(cp[:, 0], cp[:, 1], color='y')
@@ -237,82 +197,14 @@ def showOneTra(traDir):
     plt.show()
 
 
-def getTrainData(tra, boundary):
-    """
-    数据处理流程，输入为截取后的数据
-    tra: 车辆轨迹 (N, 4)
-    boundary: 路段边界轨迹 (N, 2)
-    """
-    # 获取监督数据（轨迹的B样条控制点）
-
-    # temp_x = tra[0, 0]      # 记录轨迹起始点坐标(全局坐标)
-    # temp_y = tra[0, 1]
-    # tra[:, 0] -= tra[0, 0]  # 使用相对坐标
-    # tra[:, 1] -= tra[0, 1]
-    # end_x = tra[-1, 0]      # 轨迹结束相对坐标
-    # end_y = tra[-1, 1]
-    start_speed = math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
-
-    traCP = bsplineFittingnew(tra=tra[:, 0:2], cpNum=8, degree=3, show=False)
-    # traCP = bsplineFitting(tra=tra[:, 0:2], cpNum=8, degree=3, distance=5, show=False)
-    # boundary[:, 0] -= temp_x
-    # boundary[:, 1] -= temp_y
-
-    # 拟合道路边界
-    boundaryCP = bsplineFittingnew(boundary, cpNum=8, degree=3, show=False)
-    
-    # boundaryCP = bsplineFitting(boundary, cpNum=8, degree=3, distance=5, show=False)s
-    boundaryCP = np.array(boundaryCP).reshape(1, -1)
-
-    # fectures = np.array([0, 0, start_speed, end_x, end_y]).reshape(1, -1)
-    # 开始点、开始速度、结束点
-    features = np.array([tra[0, 0], tra[0, 1], start_speed, tra[-1, 0], tra[-1, 1]]).reshape(1, -1)
-    features = np.hstack([features, boundaryCP])
-    labels = np.array(traCP).reshape(1, -1)
-    return features, labels
-
-
-def batchProcess(dataDir, juncDir, index):
-    '''
-    批量处理数据
-    index: 路段数据编号
-    '''
-    if not os.path.exists("./data_input"):
-        os.makedirs("./data_input")
-    fea = []
-    lab = []
-    fileDirs = glob.glob(pathname = '{}/bag_2022*_*'.format(dataDir))
-    # boundary = np.load("{}/boundary.npy".format(juncDir))
-    # boundary  = np.load("{}/centerLane.npy".format(juncDir))
-    for file in fileDirs:
-        # tra = np.load("{}/tra.npy".format(file))
-        tra, boundary = transfor(juncDir=juncDir, traDir=file)
-        
-        
-        
-        features, labels = getTrainData(tra=tra, boundary=boundary)
-        fea.append(features)
-        lab.append(labels)
-
-    fea = np.array(fea).flatten().reshape(len(fileDirs) , -1)
-    lab = np.array(lab).flatten().reshape(len(fileDirs) , -1)
-    
-    np.save("{}/features_{}".format("./data_input", index), fea)
-    np.save("{}/labels_{}".format("./data_input", index), lab)
-    return fea, lab
-
-
 def rotationTra(tra, point, angle):
-    """ 输入一条轨迹，返回按 point 旋转 angle 角度后的轨迹 """
+    """ 输入一条轨迹，返回按 point 逆时针旋转 angle 角度后的轨迹 """
     newTra = np.zeros_like(tra)
     x0, y0 = point[0], point[1]
-    # 逆时针
-    # newTra[:, 0] = (tra[:, 0]-x0)*np.cos(angle) - (tra[:, 1]-y0)*np.sin(angle)
-    # newTra[:, 1] = (tra[:, 0]-x0)*np.sin(angle) + (tra[:, 1]-y0)*np.cos(angle)
-    # 顺时针
-    newTra[:, 0] = (tra[:, 0]-x0)*np.cos(angle) + (tra[:, 1]-y0)*np.sin(angle)
-    newTra[:, 1] = (tra[:, 1]-y0)*np.cos(angle) - (tra[:, 0]-x0)*np.sin(angle)
+    newTra[:, 0] = (tra[:, 0]-x0)*np.cos(angle) - (tra[:, 1]-y0)*np.sin(angle)
+    newTra[:, 1] = (tra[:, 0]-x0)*np.sin(angle) + (tra[:, 1]-y0)*np.cos(angle)
     return newTra
+
 
 def augmentData(juncDir, traDir, angle, show=False):
     """
@@ -348,123 +240,155 @@ def augmentData(juncDir, traDir, angle, show=False):
         plt.show()
     return newTra, NewBoundary
 
-def rotationTra(tra, point, angle):
-    """ 输入一条轨迹，返回按 point 旋转 angle 角度后的轨迹 """
-    newTra = np.zeros_like(tra)
-    x0, y0 = point[0], point[1]
-    # 逆时针
-    # newTra[:, 0] = (tra[:, 0]-x0)*np.cos(angle) - (tra[:, 1]-y0)*np.sin(angle)
-    # newTra[:, 1] = (tra[:, 0]-x0)*np.sin(angle) + (tra[:, 1]-y0)*np.cos(angle)
-    # 顺时针
-    newTra[:, 0] = (tra[:, 0]-x0)*np.cos(angle) + (tra[:, 1]-y0)*np.sin(angle)
-    newTra[:, 1] = (tra[:, 1]-y0)*np.cos(angle) - (tra[:, 0]-x0)*np.sin(angle)
-    return newTra
 
-def getAugmentTrainData(juncDir, traDir, step):
+def buildTrainData(reduce_tra, reduce_bound, cos, sin, start_speed, rotDirec):
+    """ 对抽稀后的轨迹顺时针旋转 angle 角度，然后求其控制点 """
+    rot_tra = rot(tra=reduce_tra, point=[0, 0], cos=cos, sin=sin, rotDirec=rotDirec)
+    lab_cp = bsplineFitting(rot_tra, cpNum=8, degree=3)     # shape: (9, 2)
+    # plt.plot(rot_tra[:, 0], rot_tra[:, 1])
+    rot_bound = rot(tra=reduce_bound, point=[0, 0], cos=cos, sin=sin, rotDirec=rotDirec)
+    bound_cp = bsplineFitting(rot_bound, cpNum=8, degree=3)
+
+    lab = lab_cp.reshape(1, -1)
+    bound_cp = bound_cp.reshape(1, -1)
+    measure = np.array([rot_tra[1, 0], rot_tra[1, 1], 
+                        start_speed, rot_tra[-1, 0], rot_tra[-1, 1]]).reshape(1, -1)
+    fea = np.hstack([measure, bound_cp])
+    return fea, lab
+
+
+def getAugmentTrainData(juncDir, traDir, step, point, cos, sin, isAug, pointNum=20):
     """ 返回对一条数据旋转一周所得到的数据的网络输入 """
     features, labels = [], []
-    dataNum = int(360 / step)
-    for index in np.arange(start=0, stop=360, step=step):
-        # 每旋转 5度 生成一条数据
-        angle = np.pi * (index/180.)
-        tra, boundary = augmentData(juncDir=juncDir, traDir=traDir, angle=angle)
-        plt.plot(tra[:, 0], tra[:, 1])
-        fea, lab = getTrainData(tra=tra, boundary=boundary)
-        features.append(fea)
-        labels.append(lab)
-    plt.show()
-    features = np.array(features).flatten().reshape(dataNum, -1)
-    labels = np.array(labels).flatten().reshape(dataNum, -1)
+    dataNum = int(360 / step) + 50
+    # 旋转轨迹使得航角为0
+    tra = np.load("{}/tra.npy".format(traDir))
+    start_speed = math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
+    newTra = rot(tra[:, :2], point=point, sin=sin, cos=cos)
+    boundary = np.load("{}/boundary.npy".format(juncDir))
+    newBoundary = rot(boundary, point=point, sin=sin, cos=cos)
+    # TODO 数据抽稀
+    re = Reduce(pointNum=pointNum)
+    reduce_tra = re.getReducePoint(newTra)
+    reduce_bound = re.getReducePoint(newBoundary)
+    assert reduce_tra.shape[0] == pointNum, \
+        "抽稀后的数据点个数要等于 pointNum"
+    assert reduce_bound.shape[0] == pointNum, \
+        "抽稀后的数据点个数要等于 pointNum"
+    # TODO 把 x 轴缩放
+    reduce_tra[:, 0] /= 10.
+    reduce_bound[:, 0] /= 10.
+
+    # 计算源数据的 fea 和 lab并保存，用作效果评估
+    fea, lab = buildTrainData(
+            reduce_tra=reduce_tra, reduce_bound=reduce_bound, cos=cos,
+            sin=sin, start_speed=start_speed, rotDirec=1)
+    np.save("{}/feature.npy".format(traDir), fea)
+    np.save("{}/label.npy".format(traDir), lab)
+
+    if isAug == True:
+        # 每隔 step 度扩充数据
+        for index in np.arange(start=0, stop=360, step=step):
+            # TODO 旋转扩充数据
+            angle = np.pi * (index/180.)
+            rot_cos = np.cos(angle)
+            rot_sin = np.sin(angle)
+            fea, lab = buildTrainData(
+                reduce_tra=reduce_tra, reduce_bound=reduce_bound, cos=rot_cos,
+                sin=rot_sin, start_speed=start_speed, rotDirec=0)
+            features.append(fea)
+            labels.append(lab)
+        # 再按随机角度生成 50 条数据
+        angles = np.random.randint(low=1, high=360, size=50)
+        for angle in angles:
+            angle = np.pi * (index/180.)
+            rot_cos = np.cos(angle)
+            rot_sin = np.sin(angle)
+            fea, lab = buildTrainData(
+                reduce_tra=reduce_tra, reduce_bound=reduce_bound, cos=rot_cos,
+                sin=rot_sin, start_speed=start_speed, rotDirec=0)
+            features.append(fea)
+            labels.append(lab)
+        # plt.show()
+        features = np.array(features).flatten().reshape(dataNum, -1)
+        labels = np.array(labels).flatten().reshape(dataNum, -1)
     return features, labels
 
 
-
-def batchAugProcess(dataDir, index, step):
+def batchAugProcess(dataDir, step, isAug):
     """
     处理 dataDir 下所有数据
-    index: 保存训练数据的后缀
     step: 每隔 step 度生成一条数据
+    dataNum: 需要扩充的数据数量
     """
+    # 对于每一个junction边界
     juncDir = "{}/junction".format(dataDir)
     fileDirs = glob.glob(pathname = '{}/bag_2022*_*'.format(dataDir))
     features = np.zeros(shape=(1, 23))
     labels = np.zeros(shape=(1, 18))
+    # TODO 航角归零: 对一个路段来说旋转点和角度是相同的
+    centerLane = np.load("{}/centerLane.npy".format(juncDir))
+    point = [centerLane[0, 0], centerLane[0, 1]]
+    cos = centerLane[0, 2]
+    sin = centerLane[0, 3]
     for file in fileDirs:
-        fea, lab = getAugmentTrainData(juncDir=juncDir, traDir=file, step=step)
-        print(file, ":", fea.shape, " ", lab.shape)
-        features = np.vstack([features, fea])
-        labels = np.vstack([labels, lab])
+        fea, lab = getAugmentTrainData(
+            juncDir=juncDir, traDir=file, step=step, point=point, cos=cos, sin=sin, isAug=isAug)
+        if isAug:
+            print(file, ":", fea.shape, " ", lab.shape)
+            features = np.vstack([features, fea])
+            labels = np.vstack([labels, lab])
     features = np.delete(features, 0, axis=0)
     labels = np.delete(labels, 0, axis=0)
-    np.save("{}/features_aug_{}".format("./data_input", index), features)
-    np.save("{}/labels_aug_{}".format("./data_input", index), labels)
-    print("feas shape: ", features.shape, " labs shape: ", labels.shape)
+    print("data Dir: ", dataDir, "feas shape: ", features.shape, " labs shape: ", labels.shape)
+    return features, labels
 
 
-def rot(tra, point, sin, cos,rotDirec):
-    """ 顺时针旋转 
-    rotDirec: 旋转方向。0: 顺时针。1: 逆时针
+def rot(tra, point, sin, cos, rotDirec=0):
+    """ 
+    顺时针旋转 
+    rotDirec: 旋转方向。0: 顺时针(默认)。1: 逆时针
     """
     newTra = np.zeros_like(tra)
     x0, y0 = point[0], point[1]
     if rotDirec == 0:   # 顺时针
-        # print("顺时针旋转前的输入：{}".format(tra[:, 0]))
-        newTra[:, 0] = (tra[:, 0]-x0)*cos + (tra[:, 1]-y0)*sin+x0
-        newTra[:, 1] = (tra[:, 1]-y0)*cos - (tra[:, 0]-x0)*sin+y0
-        # print("顺时针旋转后：{}".format(newTra[:, 0]))
-        newTra[:, 0] -= x0
-        newTra[:, 1] -= y0
-        # print("顺时针旋转后：{}".format(newTra[:, 0]))
-        
-
+        newTra[:, 0] = (tra[:, 0]-x0)*cos + (tra[:, 1]-y0)*sin
+        newTra[:, 1] = (tra[:, 1]-y0)*cos - (tra[:, 0]-x0)*sin
     if rotDirec == 1:   # 逆时针
-        # print("逆时针旋转前的输入：{}".format(tra[:, 0]))
-        tra[:, 0] += x0
-        tra[:, 1] += y0
-        # print("逆时针旋转前的输入：{}".format(tra[:, 0]))
-        newTra[:, 0] += (tra[:, 0]-x0)*cos - (tra[:, 1]-y0)*sin+x0
-        newTra[:, 1] += (tra[:, 0]-x0)*sin + (tra[:, 1]-y0)*cos+y0
-        # print("逆时针旋转后：{}".format(newTra[:, 0]))
-    
+        newTra[:, 0] = (tra[:, 0]-x0)*cos - (tra[:, 1]-y0)*sin
+        newTra[:, 1] = (tra[:, 0]-x0)*sin + (tra[:, 1]-y0)*cos
     return newTra
-
-
-
-
-
-
 
 
 def transfor(juncDir, traDir, show=False):
     """
-    变换坐标使得本车轨迹的第一个点为0点，并使汽车的速度方向为x正向
+    变换坐标使得车道中心线第一个点的朝 x 轴正向
     return: 变换后的轨迹tra和边界boundary
     """
-   
-   
-   
+    centerLane = np.load("{}/centerLane.npy".format(juncDir))
+    point = [centerLane[0, 0], centerLane[0, 1]]
+    cos = centerLane[0, 2]
+    sin = centerLane[0, 3]
 
-    # boundary = np.load("{}/boundary.npy".format(juncDir))
-    boundary = np.load("{}/centerLane.npy".format(juncDir))
+    boundary = np.load("{}/boundary.npy".format(juncDir))
     tra = np.load("{}/tra.npy".format(traDir))
-    point =[ tra[0,0] ,tra[0,1]]
-    cos  = tra[0,2] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
-    sin = tra[0,3] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
-
-
-    newTra = rot(tra, point=point, sin=sin, cos=cos , rotDirec= 0)
+    newTra = rot(tra, point=point, sin=sin, cos=cos, rotDirec=0)
     newTra[:, 2:4] = tra[:, 2:4]
-    newBound = rot(boundary, point=point, sin=sin, cos=cos , rotDirec= 0)
+    newBound = rot(boundary, point=point, sin=sin, cos=cos, rotDirec=0)
+
+    newTra[:, 0] /= 10.
+    newBound[:, 0] /= 10.
 
     if show:
         # 绘制旋转后的路段信息
         fileDirs = glob.glob(pathname = '{}/segment*.npy'.format(juncDir))
         for file in fileDirs:
             lane = np.load(file)
-            centerLine = rot(tra=lane[:, :2], point=point, sin=sin, cos=cos ,rotDirec =0 )
-            leftLine = rot(tra=lane[:, 2:4], point=point, sin=sin, cos=cos,rotDirec =0)
-            rightLine = rot(tra=lane[:, 4:6], point=point, sin=sin, cos=cos,rotDirec =0)
+            centerLine = rot(tra=lane[:, :2], point=point, sin=sin, cos=cos, rotDirec=0)
+            leftLine = rot(tra=lane[:, 2:4], point=point, sin=sin, cos=cos, rotDirec=0)
+            rightLine = rot(tra=lane[:, 4:6], point=point, sin=sin, cos=cos, rotDirec=0)
             newLane = np.hstack([centerLine, leftLine, rightLine])
+            newLane[:, [0, 2, 4]] /= 10.
             if show:
                 plt.plot(newLane[:, 0], newLane[:, 1], color='g', linestyle='--')
                 plt.plot(newLane[:, 2], newLane[:, 3], color='b')
@@ -472,53 +396,8 @@ def transfor(juncDir, traDir, show=False):
 
         plt.plot(newTra[:, 0], newTra[:, 1], color='r')         # 新的轨迹
         plt.plot(newBound[:, 0], newBound[:, 1], color='r')     # 新边界
-        # pltTra(juncDir=juncDir, traDir=traDir)                  # 原有的路段信息
-
+        pltTra(juncDir=juncDir, traDir=traDir)                  # 原有的路段信息
         plt.show()
     return newTra, newBound
+    
 
-
-
-
-
-
-
-
-# gettraindata_old处理方法
-# 路口1数据处理
-# tradir  = "./data/bag_20220108_1/"
-# laneDir = './data/junction/'
-
-# fectures, labels = getTrainData3(juncDir = laneDir,traDir =tradir,limit_1=-200, limit_2=-100)
-
-# 路口3数据处理
-# tradir  = "./datatest/bag_20220118_4/"
-# laneDir = './datatest/junction/'
-# fectures, labels = getTrainData2(juncDir = laneDir,traDir =tradir,  limit_1=-850, limit_2=-700)
-
-# tradir  = "./data/bag_20220108_1"
-# juncDir = './data/junction'
-# fectures, labels = getTrainData3(juncDir = juncDir,traDir =tradir,limit_1=-200, limit_2=-100)
-# transfor(juncDir = juncDir  , traDir= tradir , show = True  )
-
-
-# tra = np.array([[-100 ,-1000,-1.31228e+01  ,8.47300e-02],
-#  [-101 ,-1002 ,-1.31221e+01 , 8.82264e-02],
-#  [-102, -1003, -1.31219e+01 , 9.05928e-02]])
-
-# point = [-100 ,-1000] 
-
-
-# cos  = tra[0,2] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
-# sin = tra[0,3] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
-
-
-# rotDirec =0
-
-# newtra = rot(tra =tra , point =point, sin  = sin , cos = cos,rotDirec = 0)
-# # print(newtra)
-# plt.plot(newtra[:,0] , newtra[:,1])
-
-# newtra = rot(tra =newtra , point =point, sin  = sin , cos = cos,rotDirec = 1)
-# # print(newtra)
-# plt.plot(newtra[:,0] , newtra[:,1])
