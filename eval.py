@@ -93,13 +93,14 @@ def eval(feature, label, juncDir, traDir, modelPath, cpNum, degree):
 def evalModel(modelPath):
     data_dirs=glob.glob(pathname='./data/*data*')
     print(data_dirs)
-    for dir in ['./data/data_2', './data/data_6', './data/data_0']:
+    for dir in [ './data/data_6', './data/data_0','./data/data_2']:
     # data_dirs=glob.glob(pathname='./data/*data*')
     # for dir in data_dirs:
         sub_data = dir.split('/')[2]
         bagName = config[sub_data]['testBag']
         juncDir = '{}/junction'.format(dir)
         traDir = '{}/{}'.format(dir, bagName)
+        print(traDir)
 
         fea = np.load("{}/feature.npy".format(traDir))
         lab = np.load("{}/label.npy".format(traDir))
@@ -114,5 +115,5 @@ def evalModel(modelPath):
 
 if __name__ == '__main__':
     # 2204_091800 --> 缩放版本
-    modelPath = './model/2204_111658/episodes_1999.pth'
+    modelPath = './model/2204_121426/episodes_999.pth'
     evalModel(modelPath=modelPath)

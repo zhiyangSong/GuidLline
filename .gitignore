@@ -104,12 +104,16 @@ venv.bak/
 .mypy_cache/
 
 
-/data0
+/data
 /test
 /data_input
 
 /model
 /log
+/data0
+/data1
+/data4
+/data5
 /data2
 /data6
 /datatest

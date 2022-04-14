@@ -67,7 +67,7 @@ config = {
         "limit": [-3910, -3810, 1],
         "index": 2,
         "LCDirec": 'right',
-        "testBag": 'bag_20220326_5'
+        "testBag": 'bag_20220127_4'
     },
     "data_4": {                         # 十字路口 西
         "limit": [-590, -490, 0],
@@ -119,11 +119,11 @@ def run(isAug=True):
 
 if __name__ == '__main__':
 
-    run(isAug=False)
+    run(isAug=True)
 
 #################################################################################
 
-    juncName = "data_2"
+    juncName = "data_6"
     bagName = config[juncName]['testBag']
 
     dataDir = './data/{}'.format(juncName)
@@ -135,6 +135,7 @@ if __name__ == '__main__':
     # plotMap(juncDir=juncDir, traDir=traDir)
 
     # 打印轨迹
+
     # pltTra(dataDir=dataDir, juncDir=juncDir, traDir=None)
 
     # 处理一条数据

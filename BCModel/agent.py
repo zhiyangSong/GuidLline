@@ -73,6 +73,8 @@ class BCAgent():
             #     self.save(epoch)
             print(f"epoch: {epoch:<4} loss: {loss:>7f}")
         self.save(epoch)
+        writer.close()
+      
 
 
     def save(self, episodes):
