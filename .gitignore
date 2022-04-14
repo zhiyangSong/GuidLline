@@ -110,6 +110,8 @@ venv.bak/
 
 /model
 /log
+/modelgan
+/loggan
 /data0
 /data1
 /data4
