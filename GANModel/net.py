@@ -34,7 +34,7 @@ class Discriminator(nn.Module):
             nn.Linear(args.num_units_1, args.num_units_2),
             nn.ReLU(True),
             nn.Linear(args.num_units_2, 1),
-            nn.Sigmoid()
+            # nn.Sigmoid()
         )
 
     def forward(self, x):

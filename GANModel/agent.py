@@ -24,8 +24,8 @@ class GANAgent():
         self.Gnet = Generator(self.input_size, self.output_size, args)
         self.Dnet = Discriminator(self.output_size, args)
 
-        self.optimizer_G = torch.optim.Adam(self.Gnet.parameters(), lr=self.learning_rate)
-        self.optimizer_D = torch.optim.Adam(self.Dnet.parameters(), lr=self.learning_rate)
+        self.optimizer_G = torch.optim.RMSprop(self.Gnet.parameters(), lr=self.learning_rate)
+        self.optimizer_D = torch.optim.RMSprop(self.Dnet.parameters(), lr=self.learning_rate)
 
         self.loss_function = nn.MSELoss(size_average=False)     # reduction='sum'
 
@@ -98,30 +98,29 @@ class GANAgent():
         writer = SummaryWriter(self.log_dir)
 
         for epoch in range(self.args.episodes_num):
-
-            #1 train Discriminator firstly
-            for _ in range(5):
-                 #1 train on real data
-
-
-                for X, y in self.data_iter(self.batch_size, self.features, self.labels): 
-                    
-                    #1 train on real data
-                   
+            for X, y in self.data_iter(self.batch_size, self.features, self.labels): 
+                #1 train Discriminator firstly
+                for _ in range(5):
+                    #1.1 train on real data         
                     yr = torch.FloatTensor(y)
                     predr = self.Dnet(yr)
                     lossr = -predr.mean()
                     #1.2 train on fake data
-                    z  = torch.randn(self.batch_size,self.input_size)
+                    # z  = torch.randn(self.batch_size,self.input_size)
+                    z =  torch.FloatTensor(X)
                     yf = self.Gnet(z).detach()
                     predf = self.Dnet(yf)
                     lossf = predf.mean()
+
+                    
+                   
                     #1.3 gradient penalty
                     gp  = self.gradient_penalty(self.Dnet,yr, yf)
-
                      #aggregate all
                     loss_D = lossr+ lossf+gp
-                    # loss_D = lossr+ lossf
+                    # loss_D = - torch.mean(torch.log(predr) + torch.log(1. - predf))
+                 
+                    
 
                     #optimize
                     self.optimizer_D.zero_grad()
@@ -129,17 +128,21 @@ class GANAgent():
                     self.optimizer_D.step()
             
 
-            # 2 train Generator
-            z = torch.randn(self.batch_size , self.input_size)
-            yf = self.Gnet(z)
-            predf = self.Dnet(yf)
-            #max predf.mean()
-            loss_G = -predf.mean()
-           
-            #optimize
-            self.optimizer_G.zero_grad()
-            loss_G.backward()
-            self.optimizer_G.step()
+                # 2 train Generator
+                # z = torch.randn(self.batch_size , self.input_size)
+                z =  torch.FloatTensor(X)
+                yf = self.Gnet(z)
+                predf = self.Dnet(yf)
+                # print(predf)
+                #max predf.mean()
+                loss_G = -predf.mean()
+                # loss_G = torch.mean(torch.log(1. - predf))  
+                
+            
+                #optimize
+                self.optimizer_G.zero_grad()
+                loss_G.backward()
+                self.optimizer_G.step()
 
 
             
