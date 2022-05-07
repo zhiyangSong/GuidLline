@@ -55,13 +55,13 @@ config = {
         "limit": [-200, -100, 0],       # x 轴坐标
         "index": 0,                     # 区分生成的数据
         "LCDirec": 'left',
-        "testBag": 'bag_20220108_1'
+        "testBag": 'bag_20220121_5'
     },
     "data_1": {                         # 十字路口 北
         "limit": [-3730, -3630, 1],
         "index": 1,
         "LCDirec": 'right',
-        "testBag": 'bag_20220326_4'
+        "testBag": 'bag_20220101_27'
     },
     "data_2": {                         # 十字路口 南
         "limit": [-3910, -3810, 1],
@@ -72,25 +72,51 @@ config = {
     "data_4": {                         # 十字路口 西
         "limit": [-590, -490, 0],
         "index": 4,
-        "LCDirec": 'left',
-        "testBag": 'bag_20220326_5'
+        "LCDirec": 'left',  
+        "testBag": 'bag_20220326_2'
     },
     "data_6": {                         # 最南端路口
         "limit": [-825, -725, 0],
         "index": 6,
         "LCDirec": 'left',
-        "testBag": 'bag_20220108_1'
+        "testBag": 'bag_20220110_1'
     },
+    "data_0_test": {                       
+        "limit": [-200, -100, 0],       # x 轴坐标
+        "index": 7,                     # 区分生成的数据
+        "LCDirec": 'left',
+        "testBag": 'bag_20220221_1'
+    },
+    "data_1_test": {                         # 十字路口 北
+        "limit": [-3730, -3630, 1],
+        "index": 8,
+        "LCDirec": 'right',
+        "testBag": 'bag_20220310_8'
+    },
+     "data_2_test": {                         # 十字路口 南
+        "limit": [-3910, -3810, 1],
+        "index": 2,
+        "LCDirec": 'right',
+        "testBag": 'bag_20220112_3'
+    },
+    "data_6_test": {                         # 最南端路口
+        "limit": [-825, -725, 0],
+        "index": 10,
+        "LCDirec": 'left',
+        "testBag": 'bag_20220312_1'
+    },
+
 }
 
 
 def run(isAug=True):
     # 路段数据预处理
-    features = np.zeros(shape=(1, 23))
+    features = np.zeros(shape=(1, 24))
     labels = np.zeros(shape=(1, 18))
     data_dirs=glob.glob(pathname='./data/*data*')
     print(data_dirs)
-    for dir in ['./data/data_2', './data/data_6', './data/data_0']:
+    for dir in [ './data/data_2','./data/data_1', './data/data_0','./data/data_6']:
+    # for dir in [ './data/data_2_test','./data/data_1_test', './data/data_0_test','./data/data_6_test']:
     # for dir in data_dirs:
         print(dir)
         sub_data = dir.split('/')[2]
@@ -105,7 +131,7 @@ def run(isAug=True):
         # print("fea shape: ", fea.shape, " lab shape: ", lab.shape)
 
         # 扩充数据
-        feas, labs = batchAugProcess(dataDir=dir, step=5, isAug=isAug)
+        feas, labs = batchAugProcess(dataDir=dir, step=5, isAug=isAug,LCDirec = config[sub_data]['LCDirec'])
         features = np.vstack([features, feas])
         labels = np.vstack([labels, labs])
 
@@ -123,7 +149,7 @@ if __name__ == '__main__':
 
 #################################################################################
 
-    juncName = "data_6"
+    juncName = "data_0"
     bagName = config[juncName]['testBag']
 
     dataDir = './data/{}'.format(juncName)
@@ -132,7 +158,7 @@ if __name__ == '__main__':
     index = config[juncName]['index']
     LCDirec = config[juncName]['LCDirec']
 
-    # plotMap(juncDir=juncDir, traDir=traDir)
+    # plotMap(juncDir=juncDir , traDir= traDir)
 
     # 打印轨迹
 

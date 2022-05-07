@@ -76,7 +76,7 @@ def preProcess(dataDir, limit, LCDirec):
     seg_2 = np.load("{}/segment_2.npy".format(juncDir))
     boundary = np.vstack([seg_0, seg_2])
     boundary = boundary[(limit[0] < boundary[:, limit[2]]) & (boundary[:, limit[2]] < limit[1]), :]
-    if LCDirec == 'left':   # 左边界
+    if LCDirec == 'right':   # 左边界
         np.save("{}/boundary.npy".format(juncDir), boundary[:, 2:4])
     else: np.save("{}/boundary.npy".format(juncDir), boundary[:, 4:6])
 
@@ -241,7 +241,7 @@ def augmentData(juncDir, traDir, angle, show=False):
     return newTra, NewBoundary
 
 
-def buildTrainData(reduce_tra, reduce_bound, cos, sin, start_speed, rotDirec):
+def buildTrainData(reduce_tra, reduce_bound, cos, sin, start_speed, rotDirec ,LCDirec):
     """ 对抽稀后的轨迹顺时针旋转 angle 角度，然后求其控制点 """
     rot_tra = rot(tra=reduce_tra, point=[0, 0], cos=cos, sin=sin, rotDirec=rotDirec)
     lab_cp = bsplineFitting(rot_tra, cpNum=8, degree=3)     # shape: (9, 2)
@@ -253,11 +253,17 @@ def buildTrainData(reduce_tra, reduce_bound, cos, sin, start_speed, rotDirec):
     bound_cp = bound_cp.reshape(1, -1)
     measure = np.array([rot_tra[1, 0], rot_tra[1, 1], 
                         start_speed, rot_tra[-1, 0], rot_tra[-1, 1]]).reshape(1, -1)
-    fea = np.hstack([measure, bound_cp])
+    if LCDirec == 'left':   # 左边界    
+        a = np.array([1]).reshape(1,-1)                   
+        fea = np.hstack([measure, bound_cp,a])
+    if LCDirec == 'right': 
+        b = np.array([2]).reshape(1,-1) 
+        fea = np.hstack([measure, bound_cp , b])  
+    
     return fea, lab
 
 
-def getAugmentTrainData(juncDir, traDir, step, point, cos, sin, isAug, pointNum=20):
+def getAugmentTrainData(juncDir, traDir, step, point, cos, sin, isAug,LCDirec, pointNum=20,):
     """ 返回对一条数据旋转一周所得到的数据的网络输入 """
     features, labels = [], []
     dataNum = int(360 / step) + 50
@@ -282,7 +288,7 @@ def getAugmentTrainData(juncDir, traDir, step, point, cos, sin, isAug, pointNum=
     # 计算源数据的 fea 和 lab并保存，用作效果评估
     fea, lab = buildTrainData(
             reduce_tra=reduce_tra, reduce_bound=reduce_bound, cos=cos,
-            sin=sin, start_speed=start_speed, rotDirec=1)
+            sin=sin, start_speed=start_speed, rotDirec=1 , LCDirec =LCDirec)
     np.save("{}/feature.npy".format(traDir), fea)
     np.save("{}/label.npy".format(traDir), lab)
 
@@ -295,7 +301,7 @@ def getAugmentTrainData(juncDir, traDir, step, point, cos, sin, isAug, pointNum=
             rot_sin = np.sin(angle)
             fea, lab = buildTrainData(
                 reduce_tra=reduce_tra, reduce_bound=reduce_bound, cos=rot_cos,
-                sin=rot_sin, start_speed=start_speed, rotDirec=0)
+                sin=rot_sin, start_speed=start_speed, rotDirec=0 ,LCDirec =LCDirec)
             features.append(fea)
             labels.append(lab)
         # 再按随机角度生成 50 条数据
@@ -306,7 +312,7 @@ def getAugmentTrainData(juncDir, traDir, step, point, cos, sin, isAug, pointNum=
             rot_sin = np.sin(angle)
             fea, lab = buildTrainData(
                 reduce_tra=reduce_tra, reduce_bound=reduce_bound, cos=rot_cos,
-                sin=rot_sin, start_speed=start_speed, rotDirec=0)
+                sin=rot_sin, start_speed=start_speed, rotDirec=0 ,LCDirec =LCDirec)
             features.append(fea)
             labels.append(lab)
         # plt.show()
@@ -315,16 +321,17 @@ def getAugmentTrainData(juncDir, traDir, step, point, cos, sin, isAug, pointNum=
     return features, labels
 
 
-def batchAugProcess(dataDir, step, isAug):
+def batchAugProcess(dataDir, step, isAug,LCDirec ):
     """
     处理 dataDir 下所有数据
+    datadir in [ './data/data_0','./data/data_1','./data/data_2','./data/data_6']:
     step: 每隔 step 度生成一条数据
     dataNum: 需要扩充的数据数量
     """
     # 对于每一个junction边界
     juncDir = "{}/junction".format(dataDir)
     fileDirs = glob.glob(pathname = '{}/bag_2022*_*'.format(dataDir))
-    features = np.zeros(shape=(1, 23))
+    features = np.zeros(shape=(1, 24))
     labels = np.zeros(shape=(1, 18))
     # TODO 航角归零: 对一个路段来说旋转点和角度是相同的
     centerLane = np.load("{}/centerLane.npy".format(juncDir))
@@ -333,7 +340,7 @@ def batchAugProcess(dataDir, step, isAug):
     sin = centerLane[0, 3]
     for file in fileDirs:
         fea, lab = getAugmentTrainData(
-            juncDir=juncDir, traDir=file, step=step, point=point, cos=cos, sin=sin, isAug=isAug)
+            juncDir=juncDir, traDir=file, step=step, point=point, cos=cos, sin=sin, isAug=isAug ,LCDirec =LCDirec)
         if isAug:
             print(file, ":", fea.shape, " ", lab.shape)
             features = np.vstack([features, fea])

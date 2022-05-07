@@ -93,7 +93,7 @@ def eval(feature, label, juncDir, traDir, modelPath, cpNum, degree):
 def evalModel(modelPath):
     data_dirs=glob.glob(pathname='./data/*data*')
     print(data_dirs)
-    for dir in [ './data/data_6', './data/data_0','./data/data_2']:
+    for dir in [ './data/data_1_test','./data/data_0_test','./data/data_6_test','./data/data_2_test' ]:
     # data_dirs=glob.glob(pathname='./data/*data*')
     # for dir in data_dirs:
         sub_data = dir.split('/')[2]
@@ -115,5 +115,5 @@ def evalModel(modelPath):
 
 if __name__ == '__main__':
     # 2204_091800 --> 缩放版本
-    modelPath = './model/2204_121426/episodes_999.pth'
+    modelPath = './model/2204_291627/episodes_499.pth'
     evalModel(modelPath=modelPath)
