@@ -115,8 +115,8 @@ def run(isAug=True):
     labels = np.zeros(shape=(1, 18))
     data_dirs=glob.glob(pathname='./data/*data*')
     print(data_dirs)
-    for dir in [ './data/data_2','./data/data_1', './data/data_0','./data/data_6']:
-    # for dir in [ './data/data_2_test','./data/data_1_test', './data/data_0_test','./data/data_6_test']:
+    # for dir in [ './data/data_2','./data/data_1', './data/data_0','./data/data_6']:
+    for dir in [ './data/data_2_test','./data/data_1_test', './data/data_0_test','./data/data_6_test']:
     # for dir in data_dirs:
         print(dir)
         sub_data = dir.split('/')[2]

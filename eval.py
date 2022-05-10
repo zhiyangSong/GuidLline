@@ -93,7 +93,7 @@ def eval(feature, label, juncDir, traDir, modelPath, cpNum, degree):
 def evalModel(modelPath):
     data_dirs=glob.glob(pathname='./data/*data*')
     print(data_dirs)
-    for dir in [ './data/data_1_test','./data/data_0_test','./data/data_6_test','./data/data_2_test' ]:
+    for dir in [ './data/data_2_test' ]:
     # data_dirs=glob.glob(pathname='./data/*data*')
     # for dir in data_dirs:
         sub_data = dir.split('/')[2]
@@ -101,6 +101,53 @@ def evalModel(modelPath):
         juncDir = '{}/junction'.format(dir)
         traDir = '{}/{}'.format(dir, bagName)
         print(traDir)
+
+        centerLane = np.load("{}/centerLane.npy".format(juncDir))
+        point = [centerLane[0, 0], centerLane[0, 1]]
+        cos = centerLane[0, 2]
+        sin = centerLane[0, 3]
+
+
+
+        preProcess(dataDir=dir , limit = config[sub_data]['limit'],
+                    LCDirec=config[sub_data]['LCDirec'])
+
+        tra = np.load("{}/tra.npy".format(traDir))
+        start_speed = math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
+        newTra = rot(tra[:, :2], point=point, sin=sin, cos=cos)
+        boundary = np.load("{}/boundary.npy".format(juncDir))
+        newBoundary = rot(boundary, point=point, sin=sin, cos=cos)
+        # TODO 数据抽稀
+        re = Reduce(pointNum=20)
+        reduce_tra = re.getReducePoint(newTra)
+        reduce_bound = re.getReducePoint(newBoundary)
+        assert reduce_tra.shape[0] == 20, \
+        "抽稀后的数据点个数要等于 pointNum"
+        assert reduce_bound.shape[0] == 20, \
+            "抽稀后的数据点个数要等于 pointNum"
+        # TODO 把 x 轴缩放
+        reduce_tra[:, 0] /= 10.
+        reduce_bound[:, 0] /= 10.
+
+        # 计算源数据的 fea 和 lab并保存，用作效果评估
+        fea, lab = buildTrainData(
+                reduce_tra=reduce_tra, reduce_bound=reduce_bound, cos=cos,
+                sin=sin, start_speed=start_speed, rotDirec=1 , LCDirec =config[sub_data]['LCDirec'])
+        np.save("{}/feature.npy".format(traDir), fea)
+        np.save("{}/label.npy".format(traDir), lab)
+
+
+        
+
+
+
+
+
+
+
+
+
+
 
         fea = np.load("{}/feature.npy".format(traDir))
         lab = np.load("{}/label.npy".format(traDir))
@@ -113,7 +160,13 @@ def evalModel(modelPath):
             cpNum=8, degree=3
         )
 
+
+
+
+
+
+
 if __name__ == '__main__':
     # 2204_091800 --> 缩放版本
-    modelPath = './model/2204_291627/episodes_499.pth'
+    modelPath = './model/2204_291736/episodes_499.pth'
     evalModel(modelPath=modelPath)
