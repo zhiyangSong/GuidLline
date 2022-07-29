@@ -333,12 +333,28 @@ def batchAugProcess(dataDir, step, isAug,LCDirec ):
     fileDirs = glob.glob(pathname = '{}/bag_2022*_*'.format(dataDir))
     features = np.zeros(shape=(1, 24))
     labels = np.zeros(shape=(1, 18))
+
+    # 改变的地方
     # TODO 航角归零: 对一个路段来说旋转点和角度是相同的
     centerLane = np.load("{}/centerLane.npy".format(juncDir))
     point = [centerLane[0, 0], centerLane[0, 1]]
     cos = centerLane[0, 2]
     sin = centerLane[0, 3]
+
+
+   
+
+
     for file in fileDirs:
+        
+        # # 改变的地方  想用轨迹第一个点做旋转的起始点
+        # tra = np.load("{}/tra.npy".format(file))
+        # point =[ tra[0,0] ,tra[0,1]]
+        # cos  = tra[0,2] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
+        # sin = tra[0,3] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
+
+
+
         fea, lab = getAugmentTrainData(
             juncDir=juncDir, traDir=file, step=step, point=point, cos=cos, sin=sin, isAug=isAug ,LCDirec =LCDirec)
         if isAug:

@@ -108,14 +108,14 @@ venv.bak/
 /test
 /data_input
 
-/model
-/log
+# /model
+# /log
 /modelgan
-/loggan
-/data0
-/data1
-/data4
-/data5
-/data2
-/data6
-/datatest
+# /loggan
+# /data0
+# /data1
+# /data4
+# /data5
+# /data2
+# /data6
+# /datatest

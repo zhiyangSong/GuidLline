@@ -85,13 +85,13 @@ config = {
         "limit": [-200, -100, 0],       # x 轴坐标
         "index": 7,                     # 区分生成的数据
         "LCDirec": 'left',
-        "testBag": 'bag_20220221_1'
+        "testBag": 'bag_20220308_1'
     },
     "data_1_test": {                         # 十字路口 北
         "limit": [-3730, -3630, 1],
         "index": 8,
         "LCDirec": 'right',
-        "testBag": 'bag_20220310_8'
+        "testBag": 'bag_20220326_1'
     },
      "data_2_test": {                         # 十字路口 南
         "limit": [-3910, -3810, 1],
@@ -103,7 +103,7 @@ config = {
         "limit": [-825, -725, 0],
         "index": 10,
         "LCDirec": 'left',
-        "testBag": 'bag_20220312_1'
+        "testBag": 'bag_20220303_1'
     },
 
 }
@@ -115,8 +115,8 @@ def run(isAug=True):
     labels = np.zeros(shape=(1, 18))
     data_dirs=glob.glob(pathname='./data/*data*')
     print(data_dirs)
-    # for dir in [ './data/data_2','./data/data_1', './data/data_0','./data/data_6']:
-    for dir in [ './data/data_2_test','./data/data_1_test', './data/data_0_test','./data/data_6_test']:
+    for dir in [ './data/data_2','./data/data_1', './data/data_0','./data/data_6']:
+    # for dir in [ './data/data_2_test','./data/data_1_test', './data/data_0_test','./data/data_6_test']:
     # for dir in data_dirs:
         print(dir)
         sub_data = dir.split('/')[2]

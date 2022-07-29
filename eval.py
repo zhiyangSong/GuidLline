@@ -12,6 +12,8 @@ from process import *
 from test import config
 
 
+
+
 args = get_common_args()
 
 
@@ -40,9 +42,17 @@ def eval(feature, label, juncDir, traDir, modelPath, cpNum, degree):
     loss = np.sum(pred-label)**2
     print("loss is: ", loss)
 
+    # 改变的地方
     centerLane = np.load("{}/centerLane.npy".format(juncDir))
     cos = centerLane[0, 2]
     sin = centerLane[0, 3]
+    # 改完之后
+    # tra = np.load("{}/tra.npy".format(traDir))
+    # cos  = tra[0,2] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
+    # sin = tra[0,3] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
+
+
+
     
     bs = BS_curve(n=cpNum, p=degree)        # 初始化B样条
     bs.get_knots()                          # 计算b样条节点并设置
@@ -71,6 +81,19 @@ def eval(feature, label, juncDir, traDir, modelPath, cpNum, degree):
     label_cp = rot(tra=rot_label_cp, point=[0, 0], sin=sin, cos=cos, rotDirec=1)
     pred_cp = rot(tra=rot_pred_cp, point=[0, 0], sin=sin, cos=cos, rotDirec=1)
     
+
+    # curves_label[:, 0] += tra[0, 0]
+    # curves_label[:, 1] += tra[0, 1]
+    # curves_pred[:, 0] += tra[0, 0]
+    # curves_pred[:, 1] += tra[0, 1]
+
+    # label_cp[:, 0] += tra[0, 0]
+    # label_cp[:, 1] += tra[0, 1]
+    # pred_cp[:, 0] += tra[0, 0]
+    # pred_cp[:, 1] += tra[0, 1]
+
+
+    # 改变的地方
     curves_label[:, 0] += centerLane[0, 0]
     curves_label[:, 1] += centerLane[0, 1]
     curves_pred[:, 0] += centerLane[0, 0]
@@ -93,7 +116,7 @@ def eval(feature, label, juncDir, traDir, modelPath, cpNum, degree):
 def evalModel(modelPath):
     data_dirs=glob.glob(pathname='./data/*data*')
     print(data_dirs)
-    for dir in [ './data/data_2_test' ]:
+    for dir in [ './data/data_2_test','./data/data_0_test','./data/data_1_test','./data/data_6_test' ]:
     # data_dirs=glob.glob(pathname='./data/*data*')
     # for dir in data_dirs:
         sub_data = dir.split('/')[2]
@@ -102,12 +125,17 @@ def evalModel(modelPath):
         traDir = '{}/{}'.format(dir, bagName)
         print(traDir)
 
+        # # 改变的地方
         centerLane = np.load("{}/centerLane.npy".format(juncDir))
         point = [centerLane[0, 0], centerLane[0, 1]]
         cos = centerLane[0, 2]
         sin = centerLane[0, 3]
 
-
+        # # # 用轨迹的第一个点做方向归一，都向x轴正向
+        # # tra = np.load("{}/tra.npy".format(traDir))
+        # # point =[ tra[0,0] ,tra[0,1]]
+        # # cos  = tra[0,2] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
+        # # sin = tra[0,3] / math.sqrt(tra[0, 2]**2 + tra[0, 3]**2)
 
         preProcess(dataDir=dir , limit = config[sub_data]['limit'],
                     LCDirec=config[sub_data]['LCDirec'])
@@ -168,5 +196,6 @@ def evalModel(modelPath):
 
 if __name__ == '__main__':
     # 2204_091800 --> 缩放版本
-    modelPath = './model/2204_291736/episodes_499.pth'
+    modelPath = './model/2207_261922/episodes_499.pth'
+
     evalModel(modelPath=modelPath)
